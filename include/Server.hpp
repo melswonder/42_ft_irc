@@ -2,20 +2,20 @@
 
 #include <iostream>
 #include <string>
-#include <vector> //-> for vector
+#include <vector>
 #include <sys/socket.h> //-> for socket()
-#include <sys/types.h> //-> for socket()
+#include <sys/types.h>  //-> for socket()
 #include <netinet/in.h> //-> for sockaddr_in
-#include <fcntl.h> //-> for fcntl()
-#include <unistd.h> //-> for close()
-#include <arpa/inet.h> //-> for inet_ntoa()
-#include <poll.h> //-> for poll()
-#include <csignal> //-> for signal()
-#include <signal.h> // signal関数を使うために必要
-#include <netdb.h> // getaddrinfoを使う
+#include <fcntl.h>      //-> for fcntl()
+#include <unistd.h>     //-> for close()
+#include <arpa/inet.h>  //-> for inet_ntoa()
+#include <poll.h>       //-> for poll()
+#include <csignal>      //-> for signal()
+#include <signal.h>     // signal関数を使うために必要
+#include <netdb.h>      // getaddrinfoを使う
 #include <string.h>
-#include <cstring> // memset()
-#include <cerrno> // errno
+#include <cstring>  // memset()
+#include <cerrno>   // errno
 #include <stdlib.h> // atoi
 
 
@@ -24,7 +24,7 @@
 #define GRE "\033[1;32m" //-> for green color
 #define YEL "\033[1;33m" //-> for yellow color
 
-class echoServer
+class Server
 {
 private:
     // bool _signal;
@@ -37,11 +37,10 @@ private:
     void handleClientData(int clientFd);
     void disconnectClient(int clientFd);
 public:
-    echoServer();
-    ~echoServer();
-    //main
-    void echoServerInit(char *argv[]);
-    void echoServerRun(void);
+    Server();
+    ~Server();
+    void ServerInit(char *argv[]);
+    void ServerRun(void);
 
     void initAddrinfo(in_port_t sin_port,struct in_addr sin_addr);
     
@@ -57,4 +56,4 @@ public:
     // struct addrinfo *getAddress(){return this->_address;} //getter
 };
 
-std::ostream &operator<<(std::ostream &out, const echoServer &Server);
+std::ostream &operator<<(std::ostream &out, const Server &Server);
