@@ -19,7 +19,8 @@ jobs:
         id: inference
         uses: actions/ai-inference@v1.0.0
         with:
-          model: openai/gpt-4o
+          # OpenAI APIを使用するようにモデルとAPIキーを設定
+          model: openai/gpt-4o # コードデバッグに適した高性能モデル
           api-key: ${{ secrets.OPENAI_API_KEY }}
           system-prompt: |
             Please provide the C++ code you would like me to review. I will analyze it for areas of improvement and provide concise suggestions and code examples
@@ -29,11 +30,10 @@ jobs:
             Bugs and logical errors
             Performance and security
             I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list
-            Please paste your C++ code
             Please write your reply in Japanese.
           prompt: |
             プルリクエストのタイトル: ${{ github.event.pull_request.title }}
-            プルリクエストの本文: ${{ github.event.pull_request.body }}
+            プルリクエストの本文: ${{ github.event.event.pull_request.body }}
           max-tokens: 1000 # レスポンスの最大トークン数
 
       - name: Comment on PR
