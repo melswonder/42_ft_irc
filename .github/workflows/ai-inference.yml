@@ -28,12 +28,12 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PR_DIFF_BASE64: ${{ steps.get_diff.outputs.PR_DIFF }}
         run: |
-          # base64 でエンコードされた差分をデコード
           PR_DIFF=$(echo "$PR_DIFF_BASE64" | base64 --decode)
-
-          # jq を使ってペイロードを生成し、curl に渡す
+          
+          USER_CONTENT=$(printf "以下に変更されたC++コードの差分を記載します。\nこの内容をレビューしてください。\n\`\`\`diff\n%s\n\`\`\`" "$PR_DIFF")
+          
           PAYLOAD=$(jq -n \
-            --arg pr_diff "$PR_DIFF" \
+            --arg user_content "$USER_CONTENT" \
             '{
               "model": "gpt-4o",
               "messages": [
@@ -43,26 +43,27 @@ jobs:
                 },
                 {
                   "role": "user",
-                  "content": "以下に変更されたC++コードの差分を記載します。\nこの内容をレビューしてください。\n```diff\n" + $pr_diff + "\n```"
+                  "content": $user_content
                 }
               ]
             }')
-
-          # curlコマンドでAPIを呼び出し、レスポンスを変数に保存
+          
+          # URLを修正
           RESPONSE=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
             | jq -r '.choices[0].message.content'
           )
-
-          # レスポンスを次のステップで使用できるように出力
-          echo "response=$(echo "$RESPONSE" | sed 's/"/\\"/g')" >> $GITHUB_OUTPUT
+          
+          # レスポンスをファイルに保存し、ファイル名を次のステップに出力
+          echo "$RESPONSE" > response_body.txt
+          echo "response_file=response_body.txt" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
+        # このステップでは環境変数(env)は不要
         env:
-          RESPONSE: ${{ steps.openai_review.outputs.response }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "$RESPONSE" > comment.txt
-          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt
+          # 前のステップから出力されたファイル名を直接使ってコメントを投稿
+          gh pr comment ${{ github.event.pull_request.number }} --body-file ${{ steps.openai_review.outputs.response_file }}
