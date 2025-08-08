@@ -18,36 +18,31 @@ jobs:
       - name: Get PR Diff
         id: get_diff
         run: |
-          echo "PR_DIFF<<EOF" >> $GITHUB_OUTPUT
-          git diff --full-index ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          git diff --full-index ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > pr_diff.txt
+          echo "PR_DIFF=$(cat pr_diff.txt)" >> $GITHUB_OUTPUT
 
-      # 修正: actions/ai-inference を使用せず、curlで直接OpenAI APIを呼び出す
       - name: AI Review with OpenAI API
         id: openai_review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PR_DIFF: ${{ steps.get_diff.outputs.PR_DIFF }}
         run: |
-          # APIリクエストのペイロードを生成
-          PAYLOAD=$(cat <<EOF
-          {
-            "model": "gpt-4o",
-            "messages": [
-              {
-                "role": "system",
-                "content": "Please provide the C++ code you would like me to review. I will analyze it for areas of improvement and provide concise suggestions and code examples. I will focus on the following aspects: Code readability, Coding conventions and best practices, Bugs and logical errors, Performance and security. I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list. Please write your reply in Japanese."
-              },
-              {
-                "role": "user",
-                "content": "以下に変更されたC++コードの差分を記載します。この内容をレビューしてください。\n```diff\n${{ steps.get_diff.outputs.PR_DIFF }}\n```"
-              }
-            ]
-          }
-          EOF
-          )
+          PAYLOAD=$(jq -n \
+            --arg pr_diff "$PR_DIFF" \
+            '{
+              "model": "gpt-4o",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "Please provide the C++ code you would like me to review. I will analyze it for areas of improvement and provide concise suggestions and code examples. I will focus on the following aspects: Code readability, Coding conventions and best practices, Bugs and logical errors, Performance and security. I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list. Please write your reply in Japanese."
+                },
+                {
+                  "role": "user",
+                  "content": "以下に変更されたC++コードの差分を記載します。\nこの内容をレビューしてください。\n```diff\n" + $pr_diff + "\n```"
+                }
+              ]
+            }')
 
-          # curlコマンドでAPIを呼び出し、レスポンスを変数に保存
           RESPONSE=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -H "Content-Type: application/json" \
@@ -55,14 +50,11 @@ jobs:
             | jq -r '.choices[0].message.content'
           )
 
-          # レスポンスを次のステップで使用できるように出力
-          echo "response<<EOF" >> $GITHUB_OUTPUT
-          echo "$RESPONSE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "response=$(echo "$RESPONSE" | sed 's/"/\\"/g')" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
         env:
-          RESPONSE: ${{ steps.openai_review.outputs.response }} # ステップ名を修正
+          RESPONSE: ${{ steps.openai_review.outputs.response }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "$RESPONSE" > comment.txt
