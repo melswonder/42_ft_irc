@@ -18,15 +18,20 @@ jobs:
       - name: Get PR Diff
         id: get_diff
         run: |
-          git diff --full-index ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > pr_diff.txt
-          echo "PR_DIFF=$(cat pr_diff.txt)" >> $GITHUB_OUTPUT
+          # git diff の出力を base64 でエンコードして渡す
+          PR_DIFF_BASE64=$(git diff --full-index ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | base64 -w 0)
+          echo "PR_DIFF=$PR_DIFF_BASE64" >> $GITHUB_OUTPUT
 
       - name: AI Review with OpenAI API
         id: openai_review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PR_DIFF: ${{ steps.get_diff.outputs.PR_DIFF }}
+          PR_DIFF_BASE64: ${{ steps.get_diff.outputs.PR_DIFF }}
         run: |
+          # base64 でエンコードされた差分をデコード
+          PR_DIFF=$(echo "$PR_DIFF_BASE64" | base64 --decode)
+
+          # jq を使ってペイロードを生成し、curl に渡す
           PAYLOAD=$(jq -n \
             --arg pr_diff "$PR_DIFF" \
             '{
@@ -43,6 +48,7 @@ jobs:
               ]
             }')
 
+          # curlコマンドでAPIを呼び出し、レスポンスを変数に保存
           RESPONSE=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -H "Content-Type: application/json" \
@@ -50,6 +56,7 @@ jobs:
             | jq -r '.choices[0].message.content'
           )
 
+          # レスポンスを次のステップで使用できるように出力
           echo "response=$(echo "$RESPONSE" | sed 's/"/\\"/g')" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
