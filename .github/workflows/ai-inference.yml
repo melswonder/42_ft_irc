@@ -1,0 +1,55 @@
+name: 'Review with AI'
+
+on:
+  pull_request:
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ① このステップを追加してプルリクエストの差分を取得します
+      - name: Get PR Diff
+        id: get_diff
+        run: |
+          echo "PR_DIFF<<EOF" >> $GITHUB_OUTPUT
+          git diff --full-index ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: AI Review
+        id: inference
+        uses: actions/ai-inference@v1.0.0
+        with:
+          model: openai/gpt-4o
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+          system-prompt: |
+            Please provide the C++ code you would like me to review. I will analyze it for areas of improvement and provide concise suggestions and code examples
+            I will focus on the following aspects
+            Code readability
+            Coding conventions and best practices
+            Bugs and logical errors
+            Performance and security
+            I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list
+            Please write your reply in Japanese.
+          # ② ここを修正して、①で定義した変数を使用します
+          prompt: |
+            以下に変更されたC++コードの差分を記載します。この内容をレビューしてください。
+            ```diff
+            ${{ steps.get_diff.outputs.PR_DIFF }}
+            ```
+          max-tokens: 1000
+
+      - name: Comment on PR
+        env:
+          RESPONSE: ${{ steps.inference.outputs.response }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$RESPONSE" > comment.txt
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt

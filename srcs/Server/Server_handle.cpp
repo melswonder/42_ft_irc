@@ -1,7 +1,7 @@
-#include "../include/echoServer.hpp"
+#include "../../include/Server.hpp"
 
 //新しい接続があったとき、STLのfdをpushbackして追加する。
-void echoServer::handleNewConnection() {
+void Server::handleNewConnection() {
     sockaddr_in clientAddr;
     socklen_t addrLen = sizeof(clientAddr);
     int newFd = accept(_listeningSocketFd,(struct sockaddr *)&clientAddr,&addrLen);
@@ -18,7 +18,7 @@ void echoServer::handleNewConnection() {
 }
 
 //データが渡されたときの処理
-void echoServer::handleClientData(int clientFd) {
+void Server::handleClientData(int clientFd) {
     char buffer[1024];
     int bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
     
@@ -52,7 +52,7 @@ void echoServer::handleClientData(int clientFd) {
 
 
 //ここから下は仮　コマンド実装なら以下を参考にするべき。
-// void echoServer::handleClientData(int clientFd) {
+// void Server::handleClientData(int clientFd) {
 //     char buffer[1024];
 //     int bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
     
