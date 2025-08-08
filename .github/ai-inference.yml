@@ -1,0 +1,45 @@
+name: 'Review with AI'
+on:
+  pull_request:
+
+jobs:
+  review:
+    permissions:
+      models: read
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: AI Review
+        id: inference
+        uses: actions/ai-inference@v1.0.0
+        with:
+          model: openai/gpt-4o
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+          system-prompt: |
+            Please provide the C++ code you would like me to review. I will analyze it for areas of improvement and provide concise suggestions and code examples
+            I will focus on the following aspects
+            Code readability
+            Coding conventions and best practices
+            Bugs and logical errors
+            Performance and security
+            I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list
+            Please paste your C++ code
+            Please write your reply in Japanese.
+          prompt: |
+            プルリクエストのタイトル: ${{ github.event.pull_request.title }}
+            プルリクエストの本文: ${{ github.event.pull_request.body }}
+          max-tokens: 1000 # レスポンスの最大トークン数
+
+      - name: Comment on PR
+        env:
+          RESPONSE: ${{ steps.inference.outputs.response }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$RESPONSE" > comment.txt
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt
