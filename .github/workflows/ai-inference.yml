@@ -32,8 +32,10 @@ jobs:
             I will omit praise, avoid verbose explanations, and summarize the key points in a bulleted list
             Please write your reply in Japanese.
           prompt: |
-            プルリクエストのタイトル: ${{ github.event.pull_request.title }}
-            プルリクエストの本文: ${{ github.event.event.pull_request.body }}
+            以下に変更されたC++コードの差分を記載します。この内容をレビューしてください。
+            ```diff
+            ${{ steps.get_diff.outputs.PR_DIFF }}
+            ```
           max-tokens: 1000 # レスポンスの最大トークン数
 
       - name: Comment on PR
