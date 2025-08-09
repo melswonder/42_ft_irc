@@ -3,22 +3,54 @@
 Server::Server() {}
 Server::~Server() {}
 
-void Server::disconnectClient(int clientFd)
+void Server::serverRun()
 {
-    for (size_t i = 0; i < _pollFds.size(); ++i)
+    std::cout << "Server is running and listening on port " << _port << std::endl;
+    while (true)
     {
-        if (_pollFds[i].fd == clientFd)
+        int numEvents = poll(&_pollFds[0], _pollFds.size(), -1);
+
+        if (numEvents < 0)
         {
-            _pollFds.erase(_pollFds.begin() + i);
+            if (errno == EINTR)
+                continue;
+            std::cerr << "poll() error" << std::endl;
             break;
         }
+
+        // numEventsが0の場合(タイムアウト時)の処理を省略
+        for (size_t i = 0; i < _pollFds.size(); ++i)
+        {
+            if (_pollFds[i].revents == 0)
+                continue;
+
+            // 接続街のソケットからのイベント
+            if (_pollFds[i].fd == _listeningSocketFd)
+            {
+                if (_pollFds[i].revents & POLLIN)
+                    handleNewConnection();
+            }
+            // 既存のクライアントソケットにイベントがあった場合
+            else
+            {
+                if (_pollFds[i].revents & POLLIN)
+                {
+                    handleClientData(_pollFds[i].fd);
+                }
+                else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+                {
+                    std::cerr << "Client disconnected unexpectedly" << std::endl;
+                    disconnectClient(_pollFds[i].fd);
+                }
+            }
+        }
     }
-    close(clientFd);
 }
 
 std::ostream &operator<<(std::ostream &out, const Server &Server)
 {
     out << "Port to bind: " << Server.getPort() << std::endl
+        << "Password :" << Server.getPassword() << std::endl
         << "fd :" << Server.getListeningSocketFd() << std::endl;
     return out;
 }

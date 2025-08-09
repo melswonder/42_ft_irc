@@ -22,7 +22,7 @@ int isValidArgument(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    Server Server;
+    Server server;
     if (isValidArgument(argc, argv))
     {
         std::cout << "Error: ./ircserv <port> <password>" << std::endl;
@@ -32,9 +32,9 @@ int main(int argc, char *argv[])
     {
         // signal(SIGINT, SignalHandler); //ctl+c
         // signal(SIGQUIT, SignalHandler);//ctl+バックスラッシュ
-        Server.ServerInit(argv);
-        // std::cout << Server << std::endl;
-        Server.ServerRun();
+        server.serverInit(argv);
+        // std::cout << server << std::endl;
+        server.serverRun();
     }
     catch (const std::exception &e)
     {

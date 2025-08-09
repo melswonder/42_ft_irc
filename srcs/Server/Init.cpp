@@ -1,5 +1,5 @@
 #include "../../include/Server.hpp"
-#include "Error/error.hpp"
+#include "Error/Error.hpp"
 
 int checkValidPort(const char *port)
 {
@@ -9,12 +9,12 @@ int checkValidPort(const char *port)
 		if (std::isdigit(port[i]) == 0)
 			throw std::runtime_error(SERVER_INVALID_PORT_CHARACTERS);
 	}
-    if (port_number < 1024 || port_number > 65535)
-			throw std::runtime_error(SERVER_RESERVED_PORT_NUMBER);
+	if (port_number < 1024 || port_number > 65535)
+		throw std::runtime_error(SERVER_RESERVED_PORT_NUMBER);
 	return port_number;
 }
 
-void Server::ServerInit(char *argv[])
+void Server::serverInit(char *argv[])
 {
 	int portNumber = checkValidPort(argv[1]);
 	_port = portNumber;
@@ -32,9 +32,9 @@ void Server::ServerInit(char *argv[])
 		throw std::runtime_error("setsockopt failed");
 	}
 
-	//ノンブロッキングにする
+	// ノンブロッキングにする
 	set_nonblocking(_listeningSocketFd);
-	//アドレス構造体を設定する
+	// アドレス構造体を設定する
 	setServerAddr(_port);
 
 	// バインド　作成した特定のソケットにローカルアドレスを割り当てるために使われる。
