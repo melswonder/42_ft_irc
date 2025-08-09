@@ -43,8 +43,8 @@ private:
 public:
     Server();
     ~Server();
-    void ServerInit(char *argv[]);
-    void ServerRun(void);
+    void serverInit(char *argv[]);
+    void serverRun(void);
 
     void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
     int set_nonblocking(int fd);
@@ -56,10 +56,9 @@ public:
     void setServerAddr(int port_nuber);
 
     // getter
-    int getPort(void) const ;
-    std::string getPassword(void) const ;
-    int getListeningSocketFd(void) const ;
-
+    int getPort(void) const;
+    std::string getPassword(void) const;
+    int getListeningSocketFd(void) const;
 
     // void setSignal(int signal) {this->_signal = signal;}
 };

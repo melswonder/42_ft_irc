@@ -7,7 +7,7 @@
 //     (void)signum;
 // }
 
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
     echoServer Server;
     if (argc != 2)
@@ -15,14 +15,16 @@ int main(int argc,char *argv[])
         std::cout << "Error: ./echoServ <port>" << std::endl;
         return (1);
     }
-    try{
+    try
+    {
         // signal(SIGINT, SignalHandler); //ctl+c
         // signal(SIGQUIT, SignalHandler);//ctl+バックスラッシュ
-        Server.echoServerInit(argv);
+        Server.echoserverInit(argv);
         // std::cout << Server << std::endl;
-        Server.echoServerRun();
+        Server.echoserverRun();
     }
-    catch(const std::exception &e){
+    catch (const std::exception &e)
+    {
         std::cerr << e.what() << std::endl;
     }
     std::cout << "The Server Closed!" << std::endl;
