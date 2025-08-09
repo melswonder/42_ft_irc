@@ -7,13 +7,16 @@ void Server::handleNewConnection() {
     int newFd = accept(_listeningSocketFd,(struct sockaddr *)&clientAddr,&addrLen);
     if (newFd < 0){
         std::cerr << "accept() error: " << std::strerror(errno) << std::endl;
-        return;
+        return ;
     }
     
+    if(set_nonblocking(newFd) == -1)
+        return ;
     struct pollfd newPollFd;
     newPollFd.fd = newFd;
     newPollFd.events = POLLIN;
-    _pollFds.push_back(newPollFd); //ノンブロッキングのオプション追加must
+    _pollFds.push_back(newPollFd);
+    
     std::cout << RED << "New connection Fd:" << newPollFd.fd << " !" << WHI << std::endl;
 }
 
