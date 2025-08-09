@@ -9,5 +9,6 @@ int Server::set_nonblocking(int fd)
         std::cerr << "fcntl () error:" << std::strerror(errno) << std::endl;
         return -1;
     }
-    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    return 0;
 }
