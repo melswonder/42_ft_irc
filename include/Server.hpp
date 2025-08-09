@@ -13,11 +13,11 @@
 #include <csignal>      //-> for signal()
 #include <signal.h>     // signal関数を使うために必要
 #include <netdb.h>      // getaddrinfoを使う
-#include <string.h>
-#include <cstring>  // memset()
-#include <cerrno>   // errno
-#include <stdlib.h> // atoi
-
+#include <cstring>      // memset()
+#include <cerrno>       // errno
+#include <stdlib.h>     // atoi
+#include <algorithm>
+#include <map>
 
 #define RED "\033[1;31m" //-> for red color
 #define WHI "\033[0;37m" //-> for white color
@@ -26,34 +26,42 @@
 
 class Server
 {
+
 private:
     // bool _signal;
+    int _port;
+    std::string _password;
     int _listeningSocketFd;
-    std::string _port;
-    std::vector<struct pollfd> _pollFds;
     struct sockaddr_in _server_addr;
+    std::vector<struct pollfd> _pollFds;
+    std::map<int, bool> _clientAuthentications;
 
     void handleNewConnection();
     void handleClientData(int clientFd);
     void disconnectClient(int clientFd);
+
 public:
     Server();
     ~Server();
     void ServerInit(char *argv[]);
     void ServerRun(void);
 
-    void initAddrinfo(in_port_t sin_port,struct in_addr sin_addr);
-    
-    //setter
-    void setAddr(int port_nuber);
+    void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
+    int set_nonblocking(int fd);
+
+    // setter
+    void setPort(int port);
+    void setPassword(std::string password);
+    void setListeningSocketFd(int listeningSocketFd);
+    void setServerAddr(int port_nuber);
+
+    // getter
+    int getPort(void) const ;
+    std::string getPassword(void) const ;
+    int getListeningSocketFd(void) const ;
 
 
-    //getter
-    std::string getPort(void) const {return this->_port;}
-    int getListeningSocketFd(void) const {return this->_listeningSocketFd;}
-
-    // void setSignal(int signal) {this->_signal = signal;} //true falseが入る
-    // struct addrinfo *getAddress(){return this->_address;} //getter
+    // void setSignal(int signal) {this->_signal = signal;}
 };
 
 std::ostream &operator<<(std::ostream &out, const Server &Server);
