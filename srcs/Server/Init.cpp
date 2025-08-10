@@ -14,10 +14,21 @@ int checkValidPort(const char *port)
 	return port_number;
 }
 
+std::string checkValidPassword(const char *str)
+{
+	if (str == NULL || *str == '\0')
+		throw std::runtime_error(SERVER_PASSWORD_EMPTY);
+
+	std::string password = str;
+	password.erase(password.find_last_not_of(" \r\n\t") + 1);
+	password.erase(0, password.find_first_not_of(" \r\n\t"));
+	return password;
+}
+
 void Server::serverInit(char *argv[])
 {
-	int portNumber = checkValidPort(argv[1]);
-	_port = portNumber;
+	_port = checkValidPort(argv[1]);
+	_password = checkValidPassword(argv[2]);
 
 	_listeningSocketFd = socket(AF_INET, SOCK_STREAM, 0); // socket これはネットワーク通信のエンドポイント（端点）ソケットを作成する関数
 	if (_listeningSocketFd == -1)
@@ -33,7 +44,7 @@ void Server::serverInit(char *argv[])
 	}
 
 	// ノンブロッキングにする
-	set_nonblocking(_listeningSocketFd);
+	setNonblocking(_listeningSocketFd);
 	// アドレス構造体を設定する
 	setServerAddr(_port);
 
