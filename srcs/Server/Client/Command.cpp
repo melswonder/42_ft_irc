@@ -1,11 +1,11 @@
 #include "../../../include/Server.hpp"
 
-void Server::authentication(std::string message, int clientFd)
+void Server::checkAuthentication(std::string message, int clientFd)
 {
 	size_t space_pos = message.find(' ');
 	std::string password = message.substr(space_pos + 1);
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
-    password.erase(0, password.find_first_not_of(" \r\n\t"));
+	password.erase(0, password.find_first_not_of(" \r\n\t"));
 	// std::cout << "Serverpass[" << _password << "]len:" << _password.length() << std::endl
 	// 		  << "Clientpass[" << password << "]len:" << _password.length() << std::endl;
 	if (_password == password)
@@ -47,7 +47,7 @@ void Server::handleClientData(int clientFd)
 	if (message.find("EXIT") != std::string::npos)
 		disconnectClient(clientFd);
 	else if (message.find("PASS") != std::string::npos)
-		authentication(message, clientFd);
+		checkAuthentication(message, clientFd);
 	else if (message.find("INFO") != std::string::npos)
 		serverInfo();
 	else if (message.rfind("PING", 0) == 0)

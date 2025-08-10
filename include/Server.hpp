@@ -39,7 +39,7 @@ private:
     void handleNewConnection();
     void handleClientData(int clientFd);
     void disconnectClient(int clientFd);
-    void authentication(std::string message, int clientFd);
+    void checkAuthentication(std::string message, int clientFd);
     void serverInfo();
 
 public:
@@ -62,7 +62,7 @@ public:
     int getPort(void) const;
     std::string getPassword(void) const;
     int getListeningSocketFd(void) const;
-    std::map<int,bool> getClientAuthentications(void) const;
+    std::map<int, bool> getClientAuthentications(void) const;
 
     // void setSignal(int signal) {this->_signal = signal;}
 };
