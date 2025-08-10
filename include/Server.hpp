@@ -24,17 +24,20 @@
 #define GRE "\033[1;32m" //-> for green color
 #define YEL "\033[1;33m" //-> for yellow color
 
+#include "Client.hpp"
+
 class Server
 {
 
 private:
-	// bool _signal;
-	int _port;
-	std::string _password;
-	int _listeningSocketFd;
-	struct sockaddr_in _server_addr;
-	std::vector<struct pollfd> _pollFds;
-	std::map<int, bool> _clientAuthentications;
+    // bool _signal;
+    int _port;
+    std::string _password;
+    int _listeningSocketFd;
+    struct sockaddr_in _server_addr;
+    std::vector<struct pollfd> _pollFds;
+    // std::map<int, Client> _client;
+    std::map<int, Client> _client;
 
 	void handleNewConnection();
 	void handleClientData(int clientFd);
@@ -62,9 +65,12 @@ public:
 	int getPort(void) const;
 	std::string getPassword(void) const;
 	int getListeningSocketFd(void) const;
-	std::map<int, bool> getClientAuthentications(void) const;
+	std::map<int, Client> getClientAuthentications(void) const;
 
-	// void setSignal(int signal) {this->_signal = signal;}
+    // Client
+    Client getClient(int fd);
+
+    // void setSignal(int signal) {this->_signal = signal;}
 };
 
 std::ostream &operator<<(std::ostream &out, const Server &server);

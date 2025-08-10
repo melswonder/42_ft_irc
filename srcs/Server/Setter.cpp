@@ -17,7 +17,8 @@ void Server::setListeningSocketFd(int listeningSocketFd)
 
 void Server::setClientAuthentications(int newfd)
 {
-	_clientAuthentications[newfd] = false;
+	std::map<int, Client>::iterator it = _client.find(newfd);
+	it->second.setAuthenticated(false);
 }
 
 // この関数はヘルパー関数です　後にbind()という関数で、

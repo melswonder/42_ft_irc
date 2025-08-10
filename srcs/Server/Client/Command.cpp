@@ -1,4 +1,5 @@
 #include "../../../include/Server.hpp"
+#include "../../../include/Client.hpp"
 
 void Server::checkAuthentication(std::string message, int clientFd)
 {
@@ -11,10 +12,10 @@ void Server::checkAuthentication(std::string message, int clientFd)
 	if (_password == password)
 	{
 		std::cout << "認証OK!" << std::endl;
-		std::map<int, bool>::iterator it = _clientAuthentications.find(clientFd);
-		if (it != _clientAuthentications.end())
+		std::map<int, Client>::iterator it = _client.find(clientFd);
+		if (it != _client.end())
 		{
-			it->second = true;
+			it->second.setAuthenticated(true);
 		}
 	}
 	else
@@ -44,22 +45,32 @@ void Server::handleClientData(int clientFd)
 
 	std::cout << GRE << message << WHI << std::endl;
 
-	if (message.find("EXIT") != std::string::npos)
+    if (message.find("PASS") != std::string::npos)
+        checkAuthentication(message, clientFd);
+    
+    Client client = getClient(clientFd);
+
+    if (client.isAuthenticated() == true)
+    {
+        if (message.find("EXIT") != std::string::npos)
 		disconnectClient(clientFd);
-	else if (message.find("PASS") != std::string::npos)
-		checkAuthentication(message, clientFd);
-	else if (message.find("INFO") != std::string::npos)
+        else if (message.find("INFO") != std::string::npos)
 		serverInfo();
-	else if (message.rfind("PING", 0) == 0)
-	{
-		// PINGコマンドのパラメータ部分を抽出
-		std::string parameter = message.substr(message.find(" ") + 1);
-
-		// PONGにそのままパラメータを含めて応答
-		std::string response = "PONG " + parameter;
-
-		send(clientFd, response.c_str(), response.length(), 0);
-	}
+        else if (message.rfind("PING", 0) == 0)
+        {
+            // PINGコマンドのパラメータ部分を抽出
+            std::string parameter = message.substr(message.find(" ") + 1);
+            
+            // PONGにそのままパラメータを含めて応答
+            std::string response = "PONG " + parameter;
+            
+            send(clientFd, response.c_str(), response.length(), 0);
+        }
+    }
+    else
+    {
+        std::cout << "you are Unauthorized client." << std::endl;
+    }
 
 	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
 

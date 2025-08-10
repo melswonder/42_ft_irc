@@ -2,20 +2,28 @@
 
 int Server::getPort(void) const
 {
-	return this->_port;
+	return (this->_port);
 }
 
 std::string Server::getPassword(void) const
 {
-	return this->_password;
+	return (this->_password);
 }
 
 int Server::getListeningSocketFd(void) const
 {
-	return this->_listeningSocketFd;
+	return (this->_listeningSocketFd);
 }
 
-std::map<int, bool> Server::getClientAuthentications(void) const
+std::map<int, Client> Server::getClientAuthentications(void) const
 {
-	return this->_clientAuthentications;
+	return (this->_client);
+}
+
+Client Server::getClient(int fd)
+{
+	std::map<int, Client>::iterator it = _client.find(fd);
+	if (it != _client.end())
+		return (it->second);
+	return NULL;
 }

@@ -1,4 +1,4 @@
-#include "../include/Client.hpp"
+#include "../../include/Client.hpp"
 
 Client::Client(int fd)
 {
@@ -39,9 +39,9 @@ void Client::setRegistered(const bool& registered)
 	this->_registered = registered;
 }
 
-int Client::getSocket(void) const
+int Client::getFd(void) const
 {
-	return this->_socket;
+	return this->_fd;
 }
 
 const std::string& Client::getNickname(void) const
