@@ -21,7 +21,7 @@ std::string checkValidPassword(const char *str)
 
 	std::string password = str;
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
-    password.erase(0, password.find_first_not_of(" \r\n\t"));
+	password.erase(0, password.find_first_not_of(" \r\n\t"));
 	return password;
 }
 

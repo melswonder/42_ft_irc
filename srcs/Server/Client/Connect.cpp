@@ -3,36 +3,36 @@
 // 新しい接続があったとき、STLのfdをpushbackして追加する。
 void Server::handleNewConnection()
 {
-    sockaddr_in clientAddr;
-    socklen_t addrLen = sizeof(clientAddr);
-    int newFd = accept(_listeningSocketFd, (struct sockaddr *)&clientAddr, &addrLen);
-    if (newFd < 0)
-    {
-        std::cerr << "accept() error: " << std::strerror(errno) << std::endl;
-        return;
-    }
+	sockaddr_in clientAddr;
+	socklen_t addrLen = sizeof(clientAddr);
+	int newFd = accept(_listeningSocketFd, (struct sockaddr *)&clientAddr, &addrLen);
+	if (newFd < 0)
+	{
+		std::cerr << "accept() error: " << std::strerror(errno) << std::endl;
+		return;
+	}
 
-    if (setNonblocking(newFd) == -1)
-        return;
-    struct pollfd newPollFd;
-    newPollFd.fd = newFd;
-    newPollFd.events = POLLIN;
-    _pollFds.push_back(newPollFd);
-    setClientAuthentications(newFd); // 認証
-    std::cout << RED << "New connection Fd:" << newPollFd.fd << " !" << WHI << std::endl;
+	if (setNonblocking(newFd) == -1)
+		return;
+	struct pollfd newPollFd;
+	newPollFd.fd = newFd;
+	newPollFd.events = POLLIN;
+	_pollFds.push_back(newPollFd);
+	setClientAuthentications(newFd); // 認証
+	std::cout << RED << "New connection Fd:" << newPollFd.fd << " !" << WHI << std::endl;
 }
 
 void Server::disconnectClient(int clientFd)
 {
-    for (size_t i = 0; i < _pollFds.size(); ++i)
-    {
-        if (_pollFds[i].fd == clientFd)
-        {
-            _pollFds.erase(_pollFds.begin() + i);
-            break;
-        }
-    }
-    close(clientFd);
+	for (size_t i = 0; i < _pollFds.size(); ++i)
+	{
+		if (_pollFds[i].fd == clientFd)
+		{
+			_pollFds.erase(_pollFds.begin() + i);
+			break;
+		}
+	}
+	close(clientFd);
 }
 
 // ここから下は仮　コマンド実装なら以下を参考にするべき。
