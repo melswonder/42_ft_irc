@@ -4,18 +4,18 @@
 #include <string>
 #include <vector>
 #include <sys/socket.h> //-> for socket()
-#include <sys/types.h>  //-> for socket()
+#include <sys/types.h>	//-> for socket()
 #include <netinet/in.h> //-> for sockaddr_in
-#include <fcntl.h>      //-> for fcntl()
-#include <unistd.h>     //-> for close()
-#include <arpa/inet.h>  //-> for inet_ntoa()
-#include <poll.h>       //-> for poll()
-#include <csignal>      //-> for signal()
-#include <signal.h>     // signal関数を使うために必要
-#include <netdb.h>      // getaddrinfoを使う
-#include <cstring>      // memset()
-#include <cerrno>       // errno
-#include <stdlib.h>     // atoi
+#include <fcntl.h>		//-> for fcntl()
+#include <unistd.h>		//-> for close()
+#include <arpa/inet.h>	//-> for inet_ntoa()
+#include <poll.h>		//-> for poll()
+#include <csignal>		//-> for signal()
+#include <signal.h>		// signal関数を使うために必要
+#include <netdb.h>		// getaddrinfoを使う
+#include <cstring>		// memset()
+#include <cerrno>		// errno
+#include <stdlib.h>		// atoi
 #include <algorithm>
 #include <map>
 
@@ -28,39 +28,43 @@ class Server
 {
 
 private:
-    // bool _signal;
-    int _port;
-    std::string _password;
-    int _listeningSocketFd;
-    struct sockaddr_in _server_addr;
-    std::vector<struct pollfd> _pollFds;
-    std::map<int, bool> _clientAuthentications;
+	// bool _signal;
+	int _port;
+	std::string _password;
+	int _listeningSocketFd;
+	struct sockaddr_in _server_addr;
+	std::vector<struct pollfd> _pollFds;
+	std::map<int, bool> _clientAuthentications;
 
-    void handleNewConnection();
-    void handleClientData(int clientFd);
-    void disconnectClient(int clientFd);
+	void handleNewConnection();
+	void handleClientData(int clientFd);
+	void disconnectClient(int clientFd);
+	void checkAuthentication(std::string message, int clientFd);
+	void serverInfo();
 
 public:
-    Server();
-    ~Server();
-    void serverInit(char *argv[]);
-    void serverRun(void);
+	Server();
+	~Server();
+	void serverInit(char *argv[]);
+	void serverRun(void);
 
-    void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
-    int set_nonblocking(int fd);
+	void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
+	int setNonblocking(int fd);
 
-    // setter
-    void setPort(int port);
-    void setPassword(std::string password);
-    void setListeningSocketFd(int listeningSocketFd);
-    void setServerAddr(int port_nuber);
+	// setter
+	void setPort(int port);
+	void setPassword(std::string password);
+	void setListeningSocketFd(int listeningSocketFd);
+	void setClientAuthentications(int newfd);
+	void setServerAddr(int port_nuber);
 
-    // getter
-    int getPort(void) const;
-    std::string getPassword(void) const;
-    int getListeningSocketFd(void) const;
+	// getter
+	int getPort(void) const;
+	std::string getPassword(void) const;
+	int getListeningSocketFd(void) const;
+	std::map<int, bool> getClientAuthentications(void) const;
 
-    // void setSignal(int signal) {this->_signal = signal;}
+	// void setSignal(int signal) {this->_signal = signal;}
 };
 
-std::ostream &operator<<(std::ostream &out, const Server &Server);
+std::ostream &operator<<(std::ostream &out, const Server &server);
