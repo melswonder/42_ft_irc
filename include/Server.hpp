@@ -39,6 +39,8 @@ private:
     void handleNewConnection();
     void handleClientData(int clientFd);
     void disconnectClient(int clientFd);
+    void authentication(std::string message, int clientFd);
+    void serverInfo();
 
 public:
     Server();
@@ -47,20 +49,22 @@ public:
     void serverRun(void);
 
     void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
-    int set_nonblocking(int fd);
+    int setNonblocking(int fd);
 
     // setter
     void setPort(int port);
     void setPassword(std::string password);
     void setListeningSocketFd(int listeningSocketFd);
+    void setClientAuthentications(int newfd);
     void setServerAddr(int port_nuber);
 
     // getter
     int getPort(void) const;
     std::string getPassword(void) const;
     int getListeningSocketFd(void) const;
+    std::map<int,bool> getClientAuthentications(void) const;
 
     // void setSignal(int signal) {this->_signal = signal;}
 };
 
-std::ostream &operator<<(std::ostream &out, const Server &Server);
+std::ostream &operator<<(std::ostream &out, const Server &server);

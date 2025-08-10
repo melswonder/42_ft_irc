@@ -2,10 +2,11 @@
 #include "../../include/Client.hpp"
 #include "../../include/Server.hpp"
 
-int Server::set_nonblocking(int fd)
+int Server::setNonblocking(int fd)
 {
-    int flags = fcntl(fd,F_GETFL,0);
-    if(flags == -1){
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+    {
         std::cerr << "fcntl () error:" << std::strerror(errno) << std::endl;
         return -1;
     }

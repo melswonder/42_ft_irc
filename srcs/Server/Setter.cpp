@@ -15,6 +15,10 @@ void Server::setListeningSocketFd(int listeningSocketFd)
     this->_listeningSocketFd = listeningSocketFd;
 }
 
+void Server::setClientAuthentications(int newfd)
+{
+    _clientAuthentications[newfd] = false;
+}
 
 // この関数はヘルパー関数です　後にbind()という関数で、
 // ソケット通信に必要な情報を整理し、関数に渡すための手段を踏んでいます

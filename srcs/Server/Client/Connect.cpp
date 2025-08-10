@@ -12,13 +12,13 @@ void Server::handleNewConnection()
         return;
     }
 
-    if (set_nonblocking(newFd) == -1)
+    if (setNonblocking(newFd) == -1)
         return;
     struct pollfd newPollFd;
     newPollFd.fd = newFd;
     newPollFd.events = POLLIN;
     _pollFds.push_back(newPollFd);
-
+    setClientAuthentications(newFd); // 認証
     std::cout << RED << "New connection Fd:" << newPollFd.fd << " !" << WHI << std::endl;
 }
 

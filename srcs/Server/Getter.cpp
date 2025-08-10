@@ -14,3 +14,8 @@ int Server::getListeningSocketFd(void) const
 {
     return this->_listeningSocketFd;
 }
+
+std::map<int,bool> Server::getClientAuthentications(void) const
+{
+    return this->_clientAuthentications;
+}
