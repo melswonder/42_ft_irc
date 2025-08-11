@@ -29,6 +29,7 @@ void Server::serverInit(char *argv[])
 {
 	_port = checkValidPort(argv[1]);
 	_password = checkValidPassword(argv[2]);
+	_password = xorEncryptDecrypt(_password);
 
 	_listeningSocketFd = socket(AF_INET, SOCK_STREAM, 0); // socket これはネットワーク通信のエンドポイント（端点）ソケットを作成する関数
 	if (_listeningSocketFd == -1)
