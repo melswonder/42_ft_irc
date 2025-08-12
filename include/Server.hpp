@@ -26,6 +26,16 @@
 
 #define KEY "hello"
 
+enum Command {
+	SUCCESS,
+	PRIVMSG,
+	JOIN,
+	PART,
+	QUIT,
+	TOPIC,
+	EXIT
+};
+
 class Server
 {
 
@@ -39,12 +49,13 @@ private:
 	std::map<int, bool> _clientAuthentications;
 
 	void handleNewConnection();
-	void handleClientData(int clientFd);
+	Command handleClientData(int clientFd);
 	void disconnectClient(int clientFd);
 	void checkAuthentication(std::string message, int clientFd);
 	void serverInfo();
 
 public:
+
 	Server();
 	~Server();
 	void serverInit(char *argv[]);

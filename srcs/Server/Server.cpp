@@ -6,9 +6,10 @@ Server::~Server() {}
 void Server::serverRun()
 {
 	std::cout << "Server is running and listening on port " << _port << std::endl;
+	int numEvents = 0;
 	while (true)
 	{
-		int numEvents = poll(&_pollFds[0], _pollFds.size(), -1);
+		numEvents = poll(&_pollFds[0], _pollFds.size(), -1);
 
 		if (numEvents < 0)
 		{
@@ -35,12 +36,14 @@ void Server::serverRun()
 			{
 				if (_pollFds[i].revents & POLLIN)
 				{
-					handleClientData(_pollFds[i].fd);
+					if (handleClientData(_pollFds[i].fd) == EXIT)
+						i--;
 				}
 				else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					std::cerr << "Client disconnected unexpectedly" << std::endl;
 					disconnectClient(_pollFds[i].fd);
+					i--;
 				}
 			}
 		}

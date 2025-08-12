@@ -30,7 +30,7 @@ void Server::serverInfo()
 }
 
 // データが渡されたときの処理
-void Server::handleClientData(int clientFd)
+Command Server::handleClientData(int clientFd)
 {
 	char buffer[512];
 	int bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
@@ -38,27 +38,24 @@ void Server::handleClientData(int clientFd)
 	if (bytesRead <= 0)
 	{
 		disconnectClient(clientFd);
-		return;
+		return EXIT;
 	}
 	buffer[bytesRead] = '\0';	 // readしたもんの末尾に\0をつけるようなもん。
 	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
-
-	std::cout << GRE << message << WHI << std::endl;
-
 	if (message.find("EXIT") != std::string::npos)
+	{
 		disconnectClient(clientFd);
+		return EXIT;
+	}
 	else if (message.find("PASS") != std::string::npos)
 		checkAuthentication(message, clientFd);
 	else if (message.find("INFO") != std::string::npos)
 		serverInfo();
 	else if (message.find("END") != std::string::npos)
-		throw std::runtime_error("END!");
-	else if (message.rfind("PING", 0) == 0)
+		throw std::runtime_error("END");
+	else if (message.find("PING") != std::string::npos)
 	{
-		// PINGコマンドのパラメータ部分を抽出
 		std::string parameter = message.substr(message.find(" ") + 1);
-
-		// PONGにそのままパラメータを含めて応答
 		std::string response = "PONG " + parameter;
 
 		send(clientFd, response.c_str(), response.length(), 0);
@@ -69,4 +66,5 @@ void Server::handleClientData(int clientFd)
 	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
 	// std::string response = ":server PRIVMSG client :" + std::string(buffer) + "\r\n";
 	// send(clientFd, response.c_str(), response.length(), 0);
+	return SUCCESS;
 }
