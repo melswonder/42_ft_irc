@@ -5,7 +5,8 @@ void Server::handleNewConnection()
 {
 	sockaddr_in clientAddr;
 	socklen_t addrLen = sizeof(clientAddr);
-	int newFd = accept(_listeningSocketFd, (struct sockaddr *)&clientAddr, &addrLen);
+	int newFd = 0;
+	newFd = accept(_listeningSocketFd, (struct sockaddr *)&clientAddr, &addrLen);
 	if (newFd < 0)
 	{
 		std::cerr << "accept() error: " << std::strerror(errno) << std::endl;
@@ -17,6 +18,7 @@ void Server::handleNewConnection()
 	struct pollfd newPollFd;
 	newPollFd.fd = newFd;
 	newPollFd.events = POLLIN;
+	newPollFd.revents = 0;
 	_pollFds.push_back(newPollFd);
 	setClientAuthentications(newFd); // 認証
 	std::cout << RED << "New connection Fd:" << newPollFd.fd << " !" << WHI << std::endl;

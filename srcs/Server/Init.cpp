@@ -74,6 +74,7 @@ void Server::serverInit(char *argv[])
 	struct pollfd serverPollFd;
 	serverPollFd.fd = _listeningSocketFd;
 	serverPollFd.events = POLLIN;
+	serverPollFd.revents = 0;
 	_pollFds.push_back(serverPollFd);
 
 	// std::cout << "=== Server Initialization Complete ===" << std::endl;
