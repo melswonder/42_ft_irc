@@ -25,6 +25,7 @@
 #define YEL "\033[1;33m" //-> for yellow color
 
 #include "Client.hpp"
+#define KEY "hello"
 
 class Server
 {
@@ -53,6 +54,7 @@ public:
 
 	void initAddrinfo(in_port_t sin_port, struct in_addr sin_addr);
 	int setNonblocking(int fd);
+	std::string xorEncryptDecrypt(const std::string& data);
 
 	// setter
 	void setPort(int port);

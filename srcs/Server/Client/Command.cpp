@@ -7,6 +7,7 @@ void Server::checkAuthentication(std::string message, int clientFd)
 	std::string password = message.substr(space_pos + 1);
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));
+	password = xorEncryptDecrypt(password);
 	// std::cout << "Serverpass[" << _password << "]len:" << _password.length() << std::endl
 	// 		  << "Clientpass[" << password << "]len:" << _password.length() << std::endl;
 	if (_password == password)
@@ -15,6 +16,7 @@ void Server::checkAuthentication(std::string message, int clientFd)
 		std::map<int, Client>::iterator it = _client.find(clientFd);
 		if (it != _client.end())
 		{
+			std::cout << "Password verified!" << std::endl;
 			it->second.setAuthenticated(true);
 		}
 	}
@@ -52,25 +54,27 @@ void Server::handleClientData(int clientFd)
 
     if (client.isAuthenticated() == true)
     {
-        if (message.find("EXIT") != std::string::npos)
-		disconnectClient(clientFd);
-        else if (message.find("INFO") != std::string::npos)
-		serverInfo();
-        else if (message.rfind("PING", 0) == 0)
-        {
-            // PINGコマンドのパラメータ部分を抽出
-            std::string parameter = message.substr(message.find(" ") + 1);
-            
-            // PONGにそのままパラメータを含めて応答
-            std::string response = "PONG " + parameter;
-            
-            send(clientFd, response.c_str(), response.length(), 0);
-        }
-    }
-    else
-    {
-        std::cout << "you are Unauthorized client." << std::endl;
-    }
+		if (message.find("EXIT") != std::string::npos)
+			disconnectClient(clientFd);
+		else if (message.find("INFO") != std::string::npos)
+			serverInfo();
+		else if (message.find("END") != std::string::npos)
+			throw std::runtime_error("END!");
+		else if (message.rfind("PING", 0) == 0)
+		{
+			// PINGコマンドのパラメータ部分を抽出
+			std::string parameter = message.substr(message.find(" ") + 1);
+
+			// PONGにそのままパラメータを含めて応答
+			std::string response = "PONG " + parameter;
+
+			send(clientFd, response.c_str(), response.length(), 0);
+		}
+	}
+	else
+	{
+		std::cout << "You are not authorized!!!" << std::endl;
+	}
 
 	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
 
