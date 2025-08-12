@@ -6,6 +6,7 @@ void Server::checkAuthentication(std::string message, int clientFd)
 	std::string password = message.substr(space_pos + 1);
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));
+	password = xorEncryptDecrypt(password);
 	// std::cout << "Serverpass[" << _password << "]len:" << _password.length() << std::endl
 	// 		  << "Clientpass[" << password << "]len:" << _password.length() << std::endl;
 	if (_password == password)
@@ -50,6 +51,8 @@ void Server::handleClientData(int clientFd)
 		checkAuthentication(message, clientFd);
 	else if (message.find("INFO") != std::string::npos)
 		serverInfo();
+	else if (message.find("END") != std::string::npos)
+		throw std::runtime_error("END!");
 	else if (message.rfind("PING", 0) == 0)
 	{
 		// PINGコマンドのパラメータ部分を抽出
