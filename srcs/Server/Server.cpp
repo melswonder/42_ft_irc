@@ -1,4 +1,4 @@
-#include "../../include/Server.hpp"
+#include "../../include/IRC.hpp"
 
 Server::Server() {}
 Server::~Server() {}
@@ -52,9 +52,9 @@ std::ostream &operator<<(std::ostream &out, const Server &server)
 	out << "Port to bind: " << server.getPort() << std::endl
 		<< "Password :" << server.getPassword() << std::endl
 		<< "Serverfd :" << server.getListeningSocketFd() << std::endl;
-	const std::map<int, bool> &authentications = server.getClientAuthentications();
-	for (std::map<int, bool>::const_iterator it = authentications.begin();
-		 it != authentications.end(); it++)
-		out << "fd[" << it->first << "] 認証 :" << (it->second ? "有効" : "無効") << std::endl;
+	const std::map<int, Client> &authentications = server.getClientAuthentications();
+	for (std::map<int, Client>::const_iterator it = authentications.begin();
+		it != authentications.end(); it++)
+		out << "fd[" << it->first << "] 認証 :" << (it->second.isAuthenticated() ? "有効" : "無効") << std::endl;
 	return out;
 }

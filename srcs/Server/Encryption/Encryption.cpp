@@ -1,5 +1,4 @@
-#include "../../../include/Server.hpp"
-
+#include "../../../include/IRC.hpp"
 
 std::string Server::xorEncryptDecrypt(const std::string& data)
 {
