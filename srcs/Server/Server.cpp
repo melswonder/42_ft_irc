@@ -96,7 +96,7 @@ Situation Server::handleClientData(int clientFd)
 		else if (data[0] == "PING")
 			serverPing(clientFd);
 		else if (data[0] == "USER")
-			it->second.setNewuser(clientFd, data);
+			setNewuser(&it->second, data);
 	}
 	else
 	{

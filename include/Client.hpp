@@ -11,6 +11,7 @@ private:
 	bool _authenticated;
 	bool _registered;
 	std::string _buf;
+	std::set<std::string> _channels;
 
 public:
 	Client();
@@ -20,15 +21,20 @@ public:
 	// setter
 	void setNickname(const std::string &nickname);
 	void setUsername(const std::string &username);
-	void setNewuser(const int fd, const std::vector<std::string> &data);
 	void setAuthenticated(bool authenticated);
 	void setRegistered(bool registered);
 
 	// getter
+	int getFd() const;
 	const std::string &getNickname(void) const;
 	const std::string &getUsername(void) const;
 	bool isAuthenticated(void) const;
 	bool isRegistered(void) const;
+	const std::set<std::string>& getChannels() const;
+
+	void joinChannel(const std::string& channelName);
+	void leaveChannel(const std::string& channelName);
+	bool isInChannel(const std::string& channelName) const;
 
 	// メッセージ処理
 	// std::vector<std::string> extractCommand(void);

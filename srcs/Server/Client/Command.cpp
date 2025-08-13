@@ -55,6 +55,34 @@ void Server::serverPing(int clientFd)
 	send(clientFd, response.c_str(), response.length(), 0);
 }
 
+// === USER ===
+void Server::setNewuser(Client* client, const std::vector<std::string> &data)
+{
+	size_t	size;
+
+	if (client->isAuthenticated() == true)
+	{
+		std::cout << "You already registered!" << std::endl;
+		return ;
+	}
+	try
+	{
+		// if (client->getFd() != fd)
+		// 	throw std::runtime_error(INVALID_FD);
+		size = data.size();
+		if (size != 3)
+			throw std::runtime_error(CMD_USER_INVALID_ARGS);
+		client->setNickname(data[1]);
+		client->setUsername(data[2]);
+		client->setRegistered(true);
+	}
+	catch (const std::exception &error)
+	{
+		std::cout << error.what() << std::endl;
+		return ;
+	}
+	std::cout << *this << std::endl;
+}
 
 //パスワード認証が終わったらこのレスポンスを返さなければいけない
 // Received: CAP LS
