@@ -49,6 +49,70 @@ void Server::serverRun()
 	}
 }
 
+// 書くfdの処理があった時
+Situation Server::handleClientData(int clientFd)
+{
+	char	buffer[512];
+	int		bytesRead;
+
+	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+	if (bytesRead <= 0)
+	{
+		disconnectClient(clientFd);
+		return DISCONNECT;
+	}
+	buffer[bytesRead] = '\0';    // readしたもんの末尾に\0をつけるようなもん。
+	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
+
+	message.erase(message.find_last_not_of(" \r\n\t") + 1); //末尾の\r\nを消さないとifできない
+	message.erase(0, message.find_first_not_of(" \r\n\t"));
+
+	std::cout << GRE << message << WHI << std::endl;
+	std::map<int, Client>::iterator it = _client.find(clientFd);
+
+	if (it == _client.end())
+	{
+		Client newClient(clientFd);
+		_client[clientFd] = newClient;
+		it = _client.find(clientFd);
+		std::cout << "Created new Client for fd: " << clientFd << std::endl;
+	}
+
+	std::vector<std::string> data = split(message, ' '); // コマンドを
+
+	if (data[0] == "PASS")
+		checkAuthentication(message, clientFd);
+	if (data[0] == "INFO")
+		serverInfo();
+	if (it->second.isAuthenticated() == true)
+	{
+		std::cout << data[0] << std::endl << data[1] << std::endl;
+		if (data[0] == "EXIT")
+			disconnectClient(clientFd);
+		else if (data[0] == "INFO")
+			serverInfo();
+		else if (data[0] == "END") // サーバー側のメモリリークチェックよう
+			throw std::runtime_error("END!");
+		else if (data[0] == "PING")
+			serverPing(clientFd);
+		else if (data[0] == "USER")
+			it->second.setNewuser(clientFd, data);
+	}
+	else
+	{
+		// std::string response = "You are not authorized!!!";
+		// send(clientFd, response.c_str(), response.length(), 0);　//ユーザーに見せる場合
+
+		std::cout << "You are not authorized!!!" << std::endl; //サーバー側の出力
+	}
+	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
+	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
+	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
+		// + "\r\n";
+	// send(clientFd, response.c_str(), response.length(), 0);
+	return CONNECT;
+}
+
 //===setter===
 void Server::setPort(int port)
 {
@@ -113,7 +177,6 @@ Client* Server::getClient(int fd)
 		return &(it->second);
 	return NULL;
 }
-
 
 std::ostream &operator<<(std::ostream &out, const Server &server)
 {

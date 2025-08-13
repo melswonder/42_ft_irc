@@ -25,6 +25,7 @@ private:
 	void disconnectClient(int clientFd);
 	void checkAuthentication(std::string message, int clientFd);
 	void serverInfo();
+	void serverPing(int clientFd);
 
 public:
 
