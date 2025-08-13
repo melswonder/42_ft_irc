@@ -4,7 +4,7 @@ Client::Client()
 {
 }
 
-Client::Client(int fd, bool authenticated, bool registered)
+Client::Client(int fd)
 {
 	this->_fd = fd;
 	this->_authenticated = false;
