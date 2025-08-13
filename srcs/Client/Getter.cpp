@@ -1,21 +1,21 @@
 #include "../../include/IRC.hpp"
 
-const std::string& Client::getNickname(void) const
+const std::string &Client::getNickname(void) const
 {
-	return this->_nickname;
+	return (this->_nickname);
 }
 
-const std::string& Client::getUserkname(void) const
+const std::string &Client::getUsername(void) const
 {
-	return this->_username;
+	return (this->_username);
 }
 
 bool Client::isAuthenticated(void) const
 {
-	return this->_authenticated;
+	return (this->_authenticated);
 }
 
 bool Client::isRegistered(void) const
 {
-	return this->_registered;
+	return (this->_registered);
 }

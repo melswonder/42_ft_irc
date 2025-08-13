@@ -14,19 +14,19 @@ private:
 
 public:
 	Client();
-	Client(int fd);
+	Client(int fd, bool authenticated, bool registered);
 	~Client();
 
 	// setter
-	void setNickname(const std::string& nickname);
-	void setUsername(const std::string& username);
+	void setNickname(const std::string &nickname);
+	void setUsername(const std::string &username);
 	void setNewuser(const int fd, const std::vector<std::string> &data);
-	void setAuthenticated(const bool& athenticated);
-	void setRegistered(const bool& registered);
+	void setAuthenticated(const bool &authenticated);
+	void setRegistered(const bool &registered);
 
 	// getter
-	const std::string& getNickname(void) const;
-	const std::string& getUserkname(void) const;
+	const std::string &getNickname(void) const;
+	const std::string &getUsername(void) const;
 	bool isAuthenticated(void) const;
 	bool isRegistered(void) const;
 

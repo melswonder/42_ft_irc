@@ -1,16 +1,24 @@
 #include "../../include/IRC.hpp"
 
-Client::Client() {}
-
-Client::Client(int fd)
+Client::Client()
 {
-	this->_fd = fd;
 }
 
-Client::~Client() {}
+Client::Client(int fd, bool authenticated, bool registered)
+{
+	this->_fd = fd;
+	this->_authenticated = false;
+	this->_registered = false;
+}
+
+Client::~Client()
+{
+}
 
 void Client::setNewuser(const int fd, const std::vector<std::string> &data)
 {
+	size_t	size;
+
 	if (this->_registered == true)
 	{
 		std::cout << "You already registered!" << std::endl;
@@ -18,9 +26,9 @@ void Client::setNewuser(const int fd, const std::vector<std::string> &data)
 	}
 	try
 	{
-		if(this->_fd != fd)
+		if (this->_fd != fd)
 			throw std::runtime_error(INVALID_FD);
-		size_t size = data.size();
+		size = data.size();
 		if (size != 3)
 			throw std::runtime_error(CMD_USER_INVALID_ARGS);
 		setNickname(data[1]);
@@ -38,7 +46,7 @@ void Client::setNewuser(const int fd, const std::vector<std::string> &data)
 std::ostream &operator<<(std::ostream &out, const Client &client)
 {
 	out << "Auth:     " << (client.isAuthenticated() ? "true" : "false") << std::endl;
-	out	<< "Nickname: " << client.getNickname() << std::endl;
-	out	<< "Username: " << client.getUserkname() << std::endl;
-	return out;
+	out << "Nickname: " << client.getNickname() << std::endl;
+	out << "Username: " << client.getUsername() << std::endl;
+	return (out);
 }
