@@ -1,14 +1,11 @@
 #include "../../include/IRC.hpp"
 
-Client::Client()
+Client::Client() : _fd(-1), _authenticated(false), _registered(false)
 {
 }
 
-Client::Client(int fd)
+Client::Client(int fd) : _fd(fd), _authenticated(false), _registered(false)
 {
-	this->_fd = fd;
-	this->_authenticated = false;
-	this->_registered = false;
 }
 
 Client::~Client()

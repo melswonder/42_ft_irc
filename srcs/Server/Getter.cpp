@@ -20,11 +20,11 @@ std::map<int, Client> Server::getClientAuthentications(void) const
 	return (this->_client);
 }
 
-Client Server::getClient(int fd)
+Client* Server::getClient(int fd)
 {
 	std::cout << "getClient()" << std::endl;
 	std::map<int, Client>::iterator it = _client.find(fd);
 	if (it != _client.end())
-		return (it->second);
+		return &(it->second);
 	return NULL;
 }

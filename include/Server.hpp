@@ -45,7 +45,7 @@ public:
 	std::map<int, Client> getClientAuthentications(void) const;
 
 	// Client
-	Client getClient(int fd);
+	Client* getClient(int fd);
 
 	// void setSignal(int signal) {this->_signal = signal;}
 };
