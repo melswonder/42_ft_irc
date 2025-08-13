@@ -33,7 +33,7 @@ void Server::serverInfo()
 }
 
 // データが渡されたときの処理
-Command Server::handleClientData(int clientFd)
+Situation Server::handleClientData(int clientFd)
 {
 	char	buffer[512];
 	int		bytesRead;
@@ -42,9 +42,7 @@ Command Server::handleClientData(int clientFd)
 	if (bytesRead <= 0)
 	{
 		disconnectClient(clientFd);
-
-		return ;
-
+		return DISCONNECT;
 	}
 	buffer[bytesRead] = '\0';    // readしたもんの末尾に\0をつけるようなもん。
 	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
@@ -92,5 +90,5 @@ Command Server::handleClientData(int clientFd)
 	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
 		// + "\r\n";
 	// send(clientFd, response.c_str(), response.length(), 0);
-	return SUCCESS;
+	return CONNECT;
 }

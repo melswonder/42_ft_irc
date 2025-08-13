@@ -3,14 +3,9 @@
 #include "IRC.hpp"
 #define KEY "hello"
 
-enum Command {
-	SUCCESS,
-	PRIVMSG,
-	JOIN,
-	PART,
-	QUIT,
-	TOPIC,
-	EXIT
+enum Situation {
+	CONNECT,
+	DISCONNECT
 };
 
 class Server
@@ -26,7 +21,7 @@ private:
 	std::map<int, Channel> _channel;
 
 	void handleNewConnection();
-	Command handleClientData(int clientFd);
+	Situation handleClientData(int clientFd);
 	void disconnectClient(int clientFd);
 	void checkAuthentication(std::string message, int clientFd);
 	void serverInfo();

@@ -31,13 +31,12 @@ void Server::serverRun()
 				if (_pollFds[i].revents & POLLIN)
 					handleNewConnection();
 			}
-			// 既存のクライアントソケットにイベントがあった場合
 			else
 			{
 				if (_pollFds[i].revents & POLLIN)
 				{
-					if (handleClientData(_pollFds[i].fd) == EXIT)
-						i--;
+					if (handleClientData(_pollFds[i].fd) == DISCONNECT)
+						i--; //本来ユーザー側からEXITするコマンドの実装の意味があるのかは不明
 				}
 				else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
