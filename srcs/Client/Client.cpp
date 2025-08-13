@@ -1,75 +1,44 @@
-#include "../../include/Client.hpp"
+#include "../../include/IRC.hpp"
+
+Client::Client() {}
 
 Client::Client(int fd)
 {
 	this->_fd = fd;
 }
 
-Client::~Client()
+Client::~Client() {}
+
+void Client::setNewuser(const int fd, const std::vector<std::string> &data)
 {
+	if (this->_registered == true)
+	{
+		std::cout << "You already registered!" << std::endl;
+		return ;
+	}
+	try
+	{
+		if(this->_fd != fd)
+			throw std::runtime_error(INVALID_FD);
+		size_t size = data.size();
+		if (size != 3)
+			throw std::runtime_error(CMD_USER_INVALID_ARGS);
+		setNickname(data[1]);
+		setUsername(data[2]);
+		setRegistered(true);
+	}
+	catch (const std::exception &error)
+	{
+		std::cout << error.what() << std::endl;
+		return ;
+	}
+	std::cout << *this << std::endl;
 }
 
-void Client::setNickname(const std::string& nickname)
+std::ostream &operator<<(std::ostream &out, const Client &client)
 {
-	this->_nickname = nickname;
-}
-
-void Client::setUsername(const std::string& username)
-{
-	this->_username = username;
-}
-
-void Client::setHostname(const std::string& hostname)
-{
-	this->_hostname = hostname;
-}
-
-void Client::setRealname(const std::string& realname)
-{
-	this->_realname = realname;
-}
-
-void Client::setAuthenticated(const bool& athenticated)
-{
-	this->_authenticated = athenticated;
-}
-
-void Client::setRegistered(const bool& registered)
-{
-	this->_registered = registered;
-}
-
-int Client::getFd(void) const
-{
-	return this->_fd;
-}
-
-const std::string& Client::getNickname(void) const
-{
-	return this->_nickname;
-}
-
-const std::string& Client::getUserkname(void) const
-{
-	return this->_username;
-}
-
-const std::string& Client::getHostname(void) const
-{
-	return this->_hostname;
-}
-
-const std::string& Client::getRealname(void) const
-{
-	return this->_realname;
-}
-
-bool Client::isAuthenticated(void) const
-{
-	return this->_authenticated;
-}
-
-bool Client::isRegistered(void) const
-{
-	return this->_registered;
+	out << "Auth:     " << (client.isAuthenticated() ? "true" : "false") << std::endl;
+	out	<< "Nickname: " << client.getNickname() << std::endl;
+	out	<< "Username: " << client.getUserkname() << std::endl;
+	return out;
 }

@@ -1,4 +1,4 @@
-#include "../../include/Server.hpp"
+#include "../../include/IRC.hpp"
 
 int Server::getPort(void) const
 {
@@ -22,6 +22,7 @@ std::map<int, Client> Server::getClientAuthentications(void) const
 
 Client Server::getClient(int fd)
 {
+	std::cout << "getClient()" << std::endl;
 	std::map<int, Client>::iterator it = _client.find(fd);
 	if (it != _client.end())
 		return (it->second);

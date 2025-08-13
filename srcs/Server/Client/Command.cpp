@@ -1,15 +1,16 @@
-#include "../../../include/Server.hpp"
-#include "../../../include/Client.hpp"
+#include "../../../include/IRC.hpp"
 
 void Server::checkAuthentication(std::string message, int clientFd)
 {
-	size_t space_pos = message.find(' ');
+	size_t	space_pos;
+
+	space_pos = message.find(' ');
 	std::string password = message.substr(space_pos + 1);
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));
 	password = xorEncryptDecrypt(password);
 	// std::cout << "Serverpass[" << _password << "]len:" << _password.length() << std::endl
-	// 		  << "Clientpass[" << password << "]len:" << _password.length() << std::endl;
+	// 			<< "Clientpass[" << password << "]len:" << _password.length() << std::endl;
 	if (_password == password)
 	{
 		std::cout << "認証OK!" << std::endl;
@@ -34,26 +35,34 @@ void Server::serverInfo()
 // データが渡されたときの処理
 void Server::handleClientData(int clientFd)
 {
-	char buffer[512];
-	int bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+	char	buffer[512];
+	int		bytesRead;
 
+	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRead <= 0)
 	{
 		disconnectClient(clientFd);
-		return;
+		return ;
 	}
-	buffer[bytesRead] = '\0';	 // readしたもんの末尾に\0をつけるようなもん。
+	buffer[bytesRead] = '\0';    // readしたもんの末尾に\0をつけるようなもん。
 	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
-
 	std::cout << GRE << message << WHI << std::endl;
+	std::map<int, Client>::iterator it = _client.find(clientFd);
 
-    if (message.find("PASS") != std::string::npos)
-        checkAuthentication(message, clientFd);
-    
-    Client client = getClient(clientFd);
+	if (it == _client.end())
+	{
+		Client newClient(clientFd);
+		_client[clientFd] = newClient;
+		it = _client.find(clientFd);
+		std::cout << "Created new Client for fd: " << clientFd << std::endl;
+	}
 
-    if (client.isAuthenticated() == true)
-    {
+	std::vector<std::string> data = split(message, ' '); // コマンドを
+
+	if (data[0].find("PASS") != std::string::npos)
+		checkAuthentication(message, clientFd);
+	if (it->second.isAuthenticated() == true)
+	{
 		if (message.find("EXIT") != std::string::npos)
 			disconnectClient(clientFd);
 		else if (message.find("INFO") != std::string::npos)
@@ -64,21 +73,20 @@ void Server::handleClientData(int clientFd)
 		{
 			// PINGコマンドのパラメータ部分を抽出
 			std::string parameter = message.substr(message.find(" ") + 1);
-
 			// PONGにそのままパラメータを含めて応答
 			std::string response = "PONG " + parameter;
-
 			send(clientFd, response.c_str(), response.length(), 0);
 		}
+		else if (message.find("USER") != std::string::npos)
+			it->second.setNewuser(clientFd, data);
 	}
 	else
 	{
 		std::cout << "You are not authorized!!!" << std::endl;
 	}
-
 	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
-
 	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
-	// std::string response = ":server PRIVMSG client :" + std::string(buffer) + "\r\n";
+	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
+		// + "\r\n";
 	// send(clientFd, response.c_str(), response.length(), 0);
 }

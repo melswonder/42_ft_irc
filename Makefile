@@ -1,15 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: hirwatan <hirwatan@student.42.fr>          +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/08/02 11:44:47 by hirwatan          #+#    #+#              #
-#    Updated: 2025/08/02 12:15:20 by hirwatan         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 NAME		:= ircserv
 CXX			:= c++
 CFLAGS		:= -Wall -Wextra -Werror -std=c++98 -pedantic
@@ -65,4 +53,8 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+r:
+	make re
+	make clean
+
+.PHONY: all clean fclean re r

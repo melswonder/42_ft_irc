@@ -1,6 +1,4 @@
-#include "../include/Channel.hpp"
-#include "../include/Client.hpp"
-#include "../include/Server.hpp"
+#include "../include/IRC.hpp"
 
 // void SignalHandler(int signum)
 // {

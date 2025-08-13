@@ -1,4 +1,4 @@
-#include "../../include/Server.hpp"
+#include "../../include/IRC.hpp"
 
 Server::Server() {}
 Server::~Server() {}
