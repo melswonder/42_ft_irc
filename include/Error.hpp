@@ -5,3 +5,5 @@
 #define SERVER_PASSWORD_EMPTY RED"ERROR: Password is empty" WHI
 #define SERVER_SOCKET_ERROR RED"ERROR: Failed to create socket." WHI
 
+#define CMD_USER_INVALID_ARGS RED"ERROR: Invalid arguments for command USER" WHI
+#define INVALID_FD RED"ERROR: Client fd does not match" WHI

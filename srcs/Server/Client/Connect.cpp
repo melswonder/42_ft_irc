@@ -1,4 +1,4 @@
-#include "../../../include/Server.hpp"
+#include "../../../include/IRC.hpp"
 
 // 新しい接続があったとき、STLのfdをpushbackして追加する。
 void Server::handleNewConnection()

@@ -1,5 +1,4 @@
-#include "../../include/Server.hpp"
-#include "Error/Error.hpp"
+#include "../../include/IRC.hpp"
 
 int checkValidPort(const char *port)
 {
