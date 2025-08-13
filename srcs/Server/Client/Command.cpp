@@ -1,5 +1,6 @@
 #include "../../../include/IRC.hpp"
 
+//=== PASS ===
 void Server::checkAuthentication(std::string message, int clientFd)
 {
 	size_t	space_pos;
@@ -27,66 +28,35 @@ void Server::checkAuthentication(std::string message, int clientFd)
 	}
 }
 
+// === INFO ===
 void Server::serverInfo()
 {
 	std::cout << *this << std::endl;
 }
 
-// データが渡されたときの処理
-void Server::handleClientData(int clientFd)
+// === EXIT === 
+void Server::disconnectClient(int clientFd)
 {
-	char	buffer[512];
-	int		bytesRead;
-
-	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
-	if (bytesRead <= 0)
+	for (size_t i = 0; i < _pollFds.size(); ++i)
 	{
-		disconnectClient(clientFd);
-		return ;
-	}
-	buffer[bytesRead] = '\0';    // readしたもんの末尾に\0をつけるようなもん。
-	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
-	std::cout << GRE << message << WHI << std::endl;
-	std::map<int, Client>::iterator it = _client.find(clientFd);
-
-	if (it == _client.end())
-	{
-		Client newClient(clientFd);
-		_client[clientFd] = newClient;
-		it = _client.find(clientFd);
-		std::cout << "Created new Client for fd: " << clientFd << std::endl;
-	}
-
-	std::vector<std::string> data = split(message, ' '); // コマンドを
-
-	if (data[0].find("PASS") != std::string::npos)
-		checkAuthentication(message, clientFd);
-	if (it->second.isAuthenticated() == true)
-	{
-		if (message.find("EXIT") != std::string::npos)
-			disconnectClient(clientFd);
-		else if (message.find("INFO") != std::string::npos)
-			serverInfo();
-		else if (message.find("END") != std::string::npos)
-			throw std::runtime_error("END!");
-		else if (message.rfind("PING", 0) == 0)
+		if (_pollFds[i].fd == clientFd)
 		{
-			// PINGコマンドのパラメータ部分を抽出
-			std::string parameter = message.substr(message.find(" ") + 1);
-			// PONGにそのままパラメータを含めて応答
-			std::string response = "PONG " + parameter;
-			send(clientFd, response.c_str(), response.length(), 0);
+			_pollFds.erase(_pollFds.begin() + i);
+			break;
 		}
-		else if (message.find("USER") != std::string::npos)
-			it->second.setNewuser(clientFd, data);
 	}
-	else
-	{
-		std::cout << "You are not authorized!!!" << std::endl;
-	}
-	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
-	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
-	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
-		// + "\r\n";
-	// send(clientFd, response.c_str(), response.length(), 0);
+	close(clientFd);
 }
+
+// === PING ===
+void Server::serverPing(int clientFd)
+{
+	std::string response = "PONG\n";
+	send(clientFd, response.c_str(), response.length(), 0);
+}
+
+
+//パスワード認証が終わったらこのレスポンスを返さなければいけない
+// Received: CAP LS
+// NICK hirwatan
+// USER hirwatan hirwatan localhost :Hiro Watanabe
