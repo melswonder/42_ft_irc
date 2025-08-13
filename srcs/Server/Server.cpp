@@ -49,6 +49,72 @@ void Server::serverRun()
 	}
 }
 
+//===setter===
+void Server::setPort(int port)
+{
+	this->_port = port;
+}
+
+void Server::setPassword(std::string password)
+{
+	this->_password = password;
+}
+
+void Server::setListeningSocketFd(int listeningSocketFd)
+{
+	this->_listeningSocketFd = listeningSocketFd;
+}
+
+void Server::setClientAuthentications(int newfd)
+{
+	Client newClient(newfd);
+	_client.insert(std::make_pair(newfd, newClient));
+	std::map<int, Client>::iterator it = _client.find(newfd);
+	it->second.setAuthenticated(false);
+	std::cout << "Created new client for fd: " << newfd << std::endl;
+}
+
+// この関数はヘルパー関数です　後にbind()という関数で、
+// ソケット通信に必要な情報を整理し、関数に渡すための手段を踏んでいます
+void Server::setServerAddr(int port_number)
+{
+	memset(&_server_addr, 0, sizeof(_server_addr));
+	_server_addr.sin_family = AF_INET;          // IPv4の使用
+	_server_addr.sin_addr.s_addr = INADDR_ANY;  // どのIPからも接続を許可
+	_server_addr.sin_port = htons(port_number); // ポート番号設定
+}
+
+//===getter===
+int Server::getPort(void) const
+{
+	return (this->_port);
+}
+
+std::string Server::getPassword(void) const
+{
+	return (this->_password);
+}
+
+int Server::getListeningSocketFd(void) const
+{
+	return (this->_listeningSocketFd);
+}
+
+std::map<int, Client> Server::getClientAuthentications(void) const
+{
+	return (this->_client);
+}
+
+Client* Server::getClient(int fd)
+{
+	std::cout << "getClient()" << std::endl;
+	std::map<int, Client>::iterator it = _client.find(fd);
+	if (it != _client.end())
+		return &(it->second);
+	return NULL;
+}
+
+
 std::ostream &operator<<(std::ostream &out, const Server &server)
 {
 	out << "Port to bind: " << server.getPort() << std::endl
