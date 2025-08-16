@@ -12,34 +12,71 @@ Client::~Client()
 {
 }
 
-void Client::setNewuser(const int fd, const std::vector<std::string> &data)
+// getter
+int Client::getFd() const
 {
-	size_t	size;
-
-	if (this->_registered == true)
-	{
-		std::cout << "You already registered!" << std::endl;
-		return ;
-	}
-	try
-	{
-		if (this->_fd != fd)
-			throw std::runtime_error(INVALID_FD);
-		size = data.size();
-		if (size != 3)
-			throw std::runtime_error(CMD_USER_INVALID_ARGS);
-		setNickname(data[1]);
-		setUsername(data[2]);
-		setRegistered(true);
-	}
-	catch (const std::exception &error)
-	{
-		std::cout << error.what() << std::endl;
-		return ;
-	}
-	std::cout << *this << std::endl;
+	return (this->_fd);
 }
 
+const std::string &Client::getNickname(void) const
+{
+	return (this->_nickname);
+}
+
+const std::string &Client::getUsername(void) const
+{
+	return (this->_username);
+}
+
+bool Client::isAuthenticated(void) const
+{
+	return (this->_authenticated);
+}
+
+bool Client::isRegistered(void) const
+{
+	return (this->_registered);
+}
+
+const std::set<std::string>& Client::getChannels() const {
+    return _channels;
+}
+
+// setter
+void Client::setNickname(const std::string &nickname)
+{
+	this->_nickname = nickname;
+}
+
+void Client::setUsername(const std::string &username)
+{
+	this->_username = username;
+}
+
+void Client::setAuthenticated(bool authenticated)
+{
+	this->_authenticated = authenticated;
+}
+
+void Client::setRegistered(bool registered)
+{
+	this->_registered = registered;
+}
+
+// メソッド
+void Client::joinChannel(const std::string& channelName) {
+	this->_channels.insert(channelName);
+}
+
+void Client::leaveChannel(const std::string& channelName) {
+	this->_channels.erase(channelName);
+}
+
+bool Client::isInChannel(const std::string& channelName) const {
+	return this->_channels.find(channelName) != _channels.end();
+}
+
+// 出力オペレータのオーバーロード
 std::ostream &operator<<(std::ostream &out, const Client &client)
 {
 	out << "Auth:     " << (client.isAuthenticated() ? "true" : "false") << std::endl;

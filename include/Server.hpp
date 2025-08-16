@@ -26,6 +26,7 @@ private:
 	void checkAuthentication(std::string message, int clientFd);
 	void serverInfo();
 	void serverPing(int clientFd);
+	void setNewuser(Client *client, const std::vector<std::string> &data);
 
 public:
 
