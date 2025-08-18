@@ -1,4 +1,4 @@
-#include "../../include/IRC.hpp"
+#include "../../includes/IRC.hpp"
 
 Client::Client() : _fd(-1), _authenticated(false), _registered(false)
 {
@@ -28,6 +28,16 @@ const std::string &Client::getUsername(void) const
 	return (this->_username);
 }
 
+const std::string &Client::getHostname(void) const
+{
+	return (this->_hostname);
+}
+
+const int &Client::getPort(void) const
+{
+	return (this->_port);
+}
+
 bool Client::isAuthenticated(void) const
 {
 	return (this->_authenticated);
@@ -53,6 +63,21 @@ void Client::setUsername(const std::string &username)
 	this->_username = username;
 }
 
+void Client::setHostname(const std::string& hostname)
+{
+	this->_hostname = hostname;
+}
+
+void Client::setRealname(const std::string& realname)
+{
+	this->_realname = realname;
+}
+
+void Client::setPort(const int port)
+{
+	this->_port = port;
+}
+
 void Client::setAuthenticated(bool authenticated)
 {
 	this->_authenticated = authenticated;
@@ -74,6 +99,10 @@ void Client::leaveChannel(const std::string& channelName) {
 
 bool Client::isInChannel(const std::string& channelName) const {
 	return this->_channels.find(channelName) != _channels.end();
+}
+
+std::string Client::getFullIdentifier() const {
+    return _nickname + "!" + _username + "@" + _hostname;
 }
 
 // 出力オペレータのオーバーロード
