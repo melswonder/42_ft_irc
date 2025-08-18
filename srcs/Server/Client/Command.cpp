@@ -1,12 +1,8 @@
 #include "../../../include/IRC.hpp"
 
 //=== PASS ===
-void Server::checkAuthentication(std::string message, int clientFd)
+void Server::checkAuthentication(std::string password, int clientFd)
 {
-	size_t	space_pos;
-
-	space_pos = message.find(' ');
-	std::string password = message.substr(space_pos + 1);
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));
 	password = xorEncryptDecrypt(password);

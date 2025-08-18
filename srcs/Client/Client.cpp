@@ -4,13 +4,10 @@ Client::Client() : _fd(-1), _authenticated(false), _registered(false)
 {
 }
 
-Client::Client(int fd) : _fd(fd), _authenticated(false), _registered(false)
-{
-}
+Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _hostname("localhost"),
+	_authenticated(false), _registered(false) {}
 
-Client::~Client()
-{
-}
+Client::~Client() {}
 
 // getter
 int Client::getFd() const
@@ -26,6 +23,11 @@ const std::string &Client::getNickname(void) const
 const std::string &Client::getUsername(void) const
 {
 	return (this->_username);
+}
+
+const std::string &Client::getHostname(void) const
+{
+	return (this->_hostname);
 }
 
 bool Client::isAuthenticated(void) const
@@ -76,11 +78,56 @@ bool Client::isInChannel(const std::string& channelName) const {
 	return this->_channels.find(channelName) != _channels.end();
 }
 
+void Client::setNewNickname(const int fd, const std::string &nickname)
+{
+	try
+	{
+		if (this->_fd != fd)
+			throw std::runtime_error(INVALID_FD);
+		setNickname(nickname);
+		checkAndCompleteRegistration();
+	}
+	catch (const std::exception &error)
+	{
+		std::cout << error.what() << std::endl;
+		return ;
+	}
+	std::cout << *this << std::endl;
+}
+
+void Client::setNewUsername(const int fd, const std::string &username)
+{
+	try
+	{
+		if (this->_fd != fd)
+			throw std::runtime_error(INVALID_FD);
+		setUsername(username);
+		checkAndCompleteRegistration();
+	}
+	catch (const std::exception &error)
+	{
+		std::cout << error.what() << std::endl;
+		return ;
+	}
+	std::cout << *this << std::endl;
+}
+
+void Client::checkAndCompleteRegistration(void)
+{
+	if (_authenticated && _authenticated && !_nickname.empty() && !_username.empty())
+	{
+		setRegistered(true);
+		std::cout << "Client " << _fd << " registration completed!" << std::endl;
+	}
+}
+
 // 出力オペレータのオーバーロード
 std::ostream &operator<<(std::ostream &out, const Client &client)
 {
-	out << "Auth:     " << (client.isAuthenticated() ? "true" : "false") << std::endl;
+	out << "Register: " << (client.isRegistered() ? "true" : "false") << std::endl;
+	out << "Auth    : " << (client.isAuthenticated() ? "true" : "false") << std::endl;
 	out << "Nickname: " << client.getNickname() << std::endl;
 	out << "Username: " << client.getUsername() << std::endl;
+	out << "Hostname: " << client.getHostname() << std::endl;
 	return (out);
 }

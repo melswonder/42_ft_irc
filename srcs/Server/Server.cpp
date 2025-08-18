@@ -78,33 +78,46 @@ Situation Server::handleClientData(int clientFd)
 		std::cout << "Created new Client for fd: " << clientFd << std::endl;
 	}
 
-	std::vector<std::string> data = split(message, ' '); // コマンドを
+	Client client = it->second;
+	std::vector<std::string> data = split(message, '\n'); // コマンドを
 
-	if (data[0] == "PASS")
-		checkAuthentication(message, clientFd);
-	if (data[0] == "INFO")
-		serverInfo();
-	if (it->second.isAuthenticated() == true)
+	if (data.empty()) // check args for any command
+		return CONNECT;
+	for (size_t i = 0; i < data.size(); ++i)
 	{
-		std::cout << data[0] << std::endl << data[1] << std::endl;
-		if (data[0] == "EXIT")
-			disconnectClient(clientFd);
-		else if (data[0] == "INFO")
+		std::vector<std::string> split_data = split(data[i], ' ');
+		std::cout << split_data << std::endl;
+		if (split_data[0] == "CAP")
+			continue;
+		if (split_data[0] == "PASS" && split_data.size() == 2)
+			checkAuthentication(split_data[1], clientFd);
+		if (split_data[0] == "INFO")
 			serverInfo();
-		else if (data[0] == "END") // サーバー側のメモリリークチェックよう
-			throw std::runtime_error("END!");
-		else if (data[0] == "PING")
-			serverPing(clientFd);
-		else if (data[0] == "USER")
-			setNewuser(&it->second, data);
-	}
-	else
-	{
-		// std::string response = "You are not authorized!!!";
-		// send(clientFd, response.c_str(), response.length(), 0);　//ユーザーに見せる場合
+		if (client.isAuthenticated() == true)
+		{
+			if (split_data[0] == "EXIT")
+				disconnectClient(clientFd);
+			else if (split_data[0] == "END") // サーバー側のメモリリークチェックよう
+				throw std::runtime_error("END!");
+			else if (split_data[0] == "PING")
+				serverPing(clientFd);
+			else if (split_data.size() >= 2)
+			{
+				if (split_data[0] == "NICK" && !split_data[1].empty())
+					client.setNewNickname(clientFd, split_data[1]);
+				else if (split_data[0] == "USER" && !split_data[1].empty())
+					client.setNewUsername(clientFd, split_data[1]);
+			}
+		}
+		else
+		{
+			// std::string response = "You are not authorized!!!";
+			// send(clientFd, response.c_str(), response.length(), 0);　//ユーザーに見せる場合
 
-		std::cout << "You are not authorized!!!" << std::endl; //サーバー側の出力
+			std::cout << "You are not authorized!!!" << std::endl; //サーバー側の出力
+		}
 	}
+
 	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
 	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
 	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
@@ -189,3 +202,32 @@ std::ostream &operator<<(std::ostream &out, const Server &server)
 		out << "fd[" << it->first << "] 認証 :" << (it->second.isAuthenticated() ? "有効" : "無効") << std::endl;
 	return out;
 }
+
+// void sendNumericReply(int clientFd, const std::string& serverName, const std::string& clientNick, const std::string& code, const std::string& message) {
+//     std::stringstream ss;
+//     ss << ":" << serverName << " " << code << " " << clientNick << " :" << message << "\r\n";
+//     std::string response = ss.str();
+//     send(clientFd, response.c_str(), response.length(), 0);
+// }
+
+// void sendAllWelcomeReplies(int clientFd, const std::string& serverName, const std::string& clientNick) {
+//     // RPL_WELCOME 001
+//     sendNumericReply(clientFd, serverName, clientNick, "001", "Welcome to the ft_irc network, " + clientNick + "!");
+    
+//     // RPL_YOURHOST 002
+//     sendNumericReply(clientFd, serverName, clientNick, "002", "Your host is " + serverName + ", running version ft_irc-1.0");
+
+//     // RPL_CREATED 003
+//     time_t now = time(0);
+//     std::string createdTime = ctime(&now);
+//     sendNumericReply(clientFd, serverName, clientNick, "003", "This server was created " + createdTime);
+
+//     // RPL_MYINFO 004
+//     sendNumericReply(clientFd, serverName, clientNick, "004", serverName + " ft_irc-1.0 i t k o l");
+    
+//     // MOTD
+//     sendNumericReply(clientFd, serverName, clientNick, "375", "- " + serverName + " Message of the day -");
+//     sendNumericReply(clientFd, serverName, clientNick, "372", "- Welcome to the ft_irc server!");
+//     sendNumericReply(clientFd, serverName, clientNick, "372", "- Please follow the rules.");
+//     sendNumericReply(clientFd, serverName, clientNick, "376", "End of MOTD command");
+// }
