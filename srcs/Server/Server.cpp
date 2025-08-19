@@ -159,6 +159,13 @@ Situation Server::handleClientData(int clientFd)
 			handlePrivmsg(it->second, data);
 		else if (command == "KICK")
 			handleKick(it->second, data);
+		else if (command == "MODE")
+			handleMode(it->second, data);
+		else
+		{
+			std::cout << "Unknown command: " << command << std::endl;
+			sendToClient(clientFd, getServerPrefix() + " 421 * " + command + " :Unknown command");
+		}
 	}
 	return CONNECT;
 }
