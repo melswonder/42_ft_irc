@@ -22,7 +22,20 @@ void Server::handlePrivmsg(Client* client, const std::vector<std::string> &data)
 
 	std::string targets_str = data[1];
 	std::vector<std::string> targets = split(targets_str, ',');
-	std::string text = data[2]; // メッセージ本文
+	std::string text;
+	if (data[2][0] == ':')
+	{
+		text = data[2].substr(1);
+		for (size_t i = 3; i < data.size(); ++i)
+		{
+			text += " " + data[i];
+		}
+	}
+	else
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " 412 " + client->getNickname() + " :No text to send");
+		return;
+	}
 
 	std::string privmsgMsg = ":" + client->getFullIdentifier() + " PRIVMSG " + targets_str + " :" + text;
 
