@@ -78,7 +78,7 @@ Situation Server::handleClientData(int clientFd)
 		std::cout << "Created new Client for fd: " << clientFd << std::endl;
 	}
 
-	Client client = it->second;
+	Client& client = it->second;
 	std::vector<std::string> data = split(message, '\n'); // コマンドを
 
 	if (data.empty()) // check args for any command
@@ -86,7 +86,7 @@ Situation Server::handleClientData(int clientFd)
 	for (size_t i = 0; i < data.size(); ++i)
 	{
 		std::vector<std::string> split_data = split(data[i], ' ');
-		std::cout << split_data << std::endl;
+
 		if (split_data[0] == "CAP")
 			continue;
 		if (split_data[0] == "PASS" && split_data.size() == 2)

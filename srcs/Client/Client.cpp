@@ -114,7 +114,7 @@ void Client::setNewUsername(const int fd, const std::string &username)
 
 void Client::checkAndCompleteRegistration(void)
 {
-	if (_authenticated && _authenticated && !_nickname.empty() && !_username.empty())
+	if (!_registered && _authenticated && !_nickname.empty() && !_username.empty())
 	{
 		setRegistered(true);
 		std::cout << "Client " << _fd << " registration completed!" << std::endl;
