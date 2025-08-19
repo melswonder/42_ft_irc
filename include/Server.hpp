@@ -23,7 +23,7 @@ private:
 	void handleNewConnection();
 	Situation handleClientData(int clientFd);
 	void disconnectClient(int clientFd);
-	void checkAuthentication(std::string message, int clientFd);
+	void checkAuthentication(std::string pasword, int clientFd);
 	void serverInfo();
 	void serverPing(int clientFd);
 	void setNewuser(Client *client, const std::vector<std::string> &data);
