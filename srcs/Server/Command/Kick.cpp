@@ -17,10 +17,12 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data) {
         for (size_t i = 4; i < data.size(); ++i) {
             comment += " " + data[i];
         }
-    } else if (data.size() > 3) {
-        // コロンがない場合、最初の単語のみをコメントとする（RFC非準拠）
-        comment = data[3];
-    }
+    } else {
+		// コロンがない場合、プロトコル違反とみなし、エラーを返す
+		// この場合、ERR_NEEDMOREPARAMS (461) を返す
+		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
+		return;
+	}
 
 	// 2. チャンネルの存在チェック: ERR_NOSUCHCHANNEL (403)
 	std::map<std::string, Channel*>::iterator channelIt = _channels.find(channelName);
