@@ -157,6 +157,8 @@ Situation Server::handleClientData(int clientFd)
 			handleJoin(it->second, data);
 		else if (command == "PRIVMSG")
 			handlePrivmsg(it->second, data);
+		else if (command == "KICK")
+			handleKick(it->second, data);
 	}
 	return CONNECT;
 }

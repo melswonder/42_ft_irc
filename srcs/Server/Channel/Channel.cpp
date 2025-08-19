@@ -1,4 +1,4 @@
-#include "IRC.hpp"
+#include "../../../includes/IRC.hpp"
 
 Channel* Server::getOrCreateChannel(const std::string& channelName) {
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);

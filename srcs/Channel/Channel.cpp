@@ -1,4 +1,4 @@
-#include "IRC.hpp"
+#include "../../includes/IRC.hpp"
 
 Channel::Channel(const std::string& name) 
     : _name(name), _inviteOnly(false), _topicRestricted(true), _userLimit(0) {
