@@ -161,6 +161,8 @@ Situation Server::handleClientData(int clientFd)
 			handleKick(it->second, data);
 		else if (command == "MODE")
 			handleMode(it->second, data);
+		else if (command == "INVITE")
+			handleInvite(it->second, data);
 		else
 		{
 			std::cout << "Unknown command: " << command << std::endl;

@@ -32,6 +32,7 @@ private:
 	void handlePrivmsg(Client* client, const std::vector<std::string> &data);
 	void handleKick(Client* client, const std::vector<std::string> &data);
 	void handleMode(Client* client, const std::vector<std::string> &data);
+	void handleInvite(Client* client, const std::vector<std::string> &data);
 	Channel* getOrCreateChannel(const std::string& channelName);
 	Client* getClientByNickname(const std::string& nickname);
 	bool isValidNickname(const std::string& nick);
