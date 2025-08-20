@@ -27,6 +27,8 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	}
 
 	std::string newNick = data[1];
+	newNick.erase(newNick.find_last_not_of(" \r\n\t") + 1);
+	newNick.erase(0, newNick.find_first_not_of(" \r\n\t"));
 
 	// ニックネームの有効性チェック
 	if (!isValidNickname(newNick))
@@ -53,7 +55,6 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	// :old_nick NICK :new_nick
 	std::string nickMsg = ":" + oldNick + " NICK :" + newNick;
 	sendToClient(client->getFd(), nickMsg);
-
 	// ニックネーム変更によって認証が完了するかチェック
 	if (!client->isRegistered() && client->isAuthenticated() && !client->getNickname().empty() && !client->getUsername().empty())
 	{
