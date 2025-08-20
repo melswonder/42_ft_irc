@@ -1,6 +1,6 @@
 NAME		:= ircserv
 CXX			:= c++
-CFLAGS		:= -Wall -Wextra -Werror -std=c++98 -pedantic
+CFLAGS		:= -Wall -Wextra -Werror -std=c++98 -pedantic -g
 RM			:= rm -rf
 
 # Project PATH

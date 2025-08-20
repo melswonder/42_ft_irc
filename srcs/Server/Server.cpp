@@ -271,3 +271,32 @@ std::ostream &operator<<(std::ostream &out, const Server &server)
 		out << "fd[" << it->first << "] 認証 :" << (it->second->isAuthenticated() ? "有効" : "無効") << std::endl;
 	return out;
 }
+
+// void sendNumericReply(int clientFd, const std::string& serverName, const std::string& clientNick, const std::string& code, const std::string& message) {
+//     std::stringstream ss;
+//     ss << ":" << serverName << " " << code << " " << clientNick << " :" << message << "\r\n";
+//     std::string response = ss.str();
+//     send(clientFd, response.c_str(), response.length(), 0);
+// }
+
+// void sendAllWelcomeReplies(int clientFd, const std::string& serverName, const std::string& clientNick) {
+//     // RPL_WELCOME 001
+//     sendNumericReply(clientFd, serverName, clientNick, "001", "Welcome to the ft_irc network, " + clientNick + "!");
+    
+//     // RPL_YOURHOST 002
+//     sendNumericReply(clientFd, serverName, clientNick, "002", "Your host is " + serverName + ", running version ft_irc-1.0");
+
+//     // RPL_CREATED 003
+//     time_t now = time(0);
+//     std::string createdTime = ctime(&now);
+//     sendNumericReply(clientFd, serverName, clientNick, "003", "This server was created " + createdTime);
+
+//     // RPL_MYINFO 004
+//     sendNumericReply(clientFd, serverName, clientNick, "004", serverName + " ft_irc-1.0 i t k o l");
+    
+//     // MOTD
+//     sendNumericReply(clientFd, serverName, clientNick, "375", "- " + serverName + " Message of the day -");
+//     sendNumericReply(clientFd, serverName, clientNick, "372", "- Welcome to the ft_irc server!");
+//     sendNumericReply(clientFd, serverName, clientNick, "372", "- Please follow the rules.");
+//     sendNumericReply(clientFd, serverName, clientNick, "376", "End of MOTD command");
+// }

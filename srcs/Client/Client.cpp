@@ -4,13 +4,10 @@ Client::Client() : _fd(-1), _authenticated(false), _registered(false)
 {
 }
 
-Client::Client(int fd) : _fd(fd), _authenticated(false), _registered(false)
-{
-}
+Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _hostname("localhost"),
+	_authenticated(false), _registered(false) {}
 
-Client::~Client()
-{
-}
+Client::~Client() {}
 
 // getter
 int Client::getFd() const
@@ -108,8 +105,10 @@ std::string Client::getFullIdentifier() const {
 // 出力オペレータのオーバーロード
 std::ostream &operator<<(std::ostream &out, const Client &client)
 {
-	out << "Auth:     " << (client.isAuthenticated() ? "true" : "false") << std::endl;
+	out << "Register: " << (client.isRegistered() ? "true" : "false") << std::endl;
+	out << "Auth    : " << (client.isAuthenticated() ? "true" : "false") << std::endl;
 	out << "Nickname: " << client.getNickname() << std::endl;
 	out << "Username: " << client.getUsername() << std::endl;
+	out << "Hostname: " << client.getHostname() << std::endl;
 	return (out);
 }
