@@ -9,6 +9,8 @@ private:
 	std::string _nickname;
 	std::string _username;
 	std::string _hostname;
+	std::string _realname;
+	int _port;
 	bool _authenticated;
 	bool _registered;
 	std::string _buf;
@@ -22,8 +24,9 @@ public:
 	// setter
 	void setNickname(const std::string &nickname);
 	void setUsername(const std::string &username);
-	void setNewNickname(const int fd, const std::string &username);
-	void setNewUsername(const int fd, const std::string &username);
+	void setHostname(const std::string &hostname);
+	void setRealname(const std::string &realname);
+	void setPort(const int port);
 	void setAuthenticated(bool authenticated);
 	void setRegistered(bool registered);
 
@@ -32,7 +35,7 @@ public:
 	const std::string &getNickname(void) const;
 	const std::string &getUsername(void) const;
 	const std::string &getHostname(void) const;
-
+	const int &getPort(void) const;
 	bool isAuthenticated(void) const;
 	bool isRegistered(void) const;
 	const std::set<std::string>& getChannels() const;
@@ -40,8 +43,7 @@ public:
 	void joinChannel(const std::string& channelName);
 	void leaveChannel(const std::string& channelName);
 	bool isInChannel(const std::string& channelName) const;
-
-	void checkAndCompleteRegistration(void);
+	std::string getFullIdentifier() const;
 
 	// メッセージ処理
 	// std::vector<std::string> extractCommand(void);

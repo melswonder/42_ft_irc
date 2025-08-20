@@ -1,4 +1,4 @@
-#include "../include/IRC.hpp"
+#include "../includes/IRC.hpp"
 
 // void SignalHandler(int signum)
 // {

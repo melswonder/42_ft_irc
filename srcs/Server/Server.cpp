@@ -1,7 +1,24 @@
-#include "../../include/IRC.hpp"
+#include "../../includes/IRC.hpp"
 
 Server::Server() {}
-Server::~Server() {}
+Server::~Server()
+{
+	// チャンネルマップの解放
+    std::map<std::string, Channel*>::iterator it_channel = _channels.begin();
+    while (it_channel != _channels.end()) {
+        delete it_channel->second;
+        it_channel++;
+    }
+	_channels.clear();
+
+    // クライアントマップの解放
+    std::map<int, Client*>::iterator it_client = _clients.begin();
+    while (it_client != _clients.end()) {
+        delete it_client->second;
+        it_client++;
+    }
+	_clients.clear();
+}
 
 void Server::serverRun()
 {
@@ -66,63 +83,92 @@ Situation Server::handleClientData(int clientFd)
 
 	message.erase(message.find_last_not_of(" \r\n\t") + 1); //末尾の\r\nを消さないとifできない
 	message.erase(0, message.find_first_not_of(" \r\n\t"));
+	if (message.empty()) {
+        return CONNECT; // 空のメッセージは無視
+    }
 
-	std::cout << GRE << message << WHI << std::endl;
-	std::map<int, Client>::iterator it = _client.find(clientFd);
+	// std::cout << GRE << message << WHI << std::endl;
+	std::map<int, Client*>::iterator it = _clients.find(clientFd);
 
-	if (it == _client.end())
+	// if (it == _clients.end())
+	// {
+	// 	Client newClient(clientFd);
+	// 	_clients[clientFd] = newClient;
+	// 	it = _clients.find(clientFd);
+	// 	std::cout << "Created new Client for fd: " << clientFd << std::endl;
+	// }
+
+	std::vector<std::string> data = split(message, ' '); // コマンドを
+	std::string command = data[0]; // コマンドの最初の部分を取得
+	std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+
+	// 認証状態のチェック
+	if (it->second->isRegistered() == false)
 	{
-		Client newClient(clientFd);
-		_client[clientFd] = newClient;
-		it = _client.find(clientFd);
-		std::cout << "Created new Client for fd: " << clientFd << std::endl;
-	}
-
-	Client client = it->second;
-	std::vector<std::string> data = split(message, '\n'); // コマンドを
-
-	if (data.empty()) // check args for any command
-		return CONNECT;
-	for (size_t i = 0; i < data.size(); ++i)
-	{
-		std::vector<std::string> split_data = split(data[i], ' ');
-		std::cout << split_data << std::endl;
-		if (split_data[0] == "CAP")
-			continue;
-		if (split_data[0] == "PASS" && split_data.size() == 2)
-			checkAuthentication(split_data[1], clientFd);
-		if (split_data[0] == "INFO")
-			serverInfo();
-		if (client.isAuthenticated() == true)
+		// 未認証の場合、許可されたコマンドのみを処理
+		if (command == "PASS" || command == "NICK" || command == "USER")
 		{
-			if (split_data[0] == "EXIT")
-				disconnectClient(clientFd);
-			else if (split_data[0] == "END") // サーバー側のメモリリークチェックよう
-				throw std::runtime_error("END!");
-			else if (split_data[0] == "PING")
-				serverPing(clientFd);
-			else if (split_data.size() >= 2)
+			// ここで認証関連の関数を呼び出す
+			if (command == "PASS")
 			{
-				if (split_data[0] == "NICK" && !split_data[1].empty())
-					client.setNewNickname(clientFd, split_data[1]);
-				else if (split_data[0] == "USER" && !split_data[1].empty())
-					client.setNewUsername(clientFd, split_data[1]);
+				if (it->second->isAuthenticated())
+					return CONNECT;
+				handlePass(it->second, data);
 			}
+			// NICKとUSERコマンドのハンドリングロジックをここに追加
+			else if (command == "NICK")
+				handleNick(it->second, data);
+			else if (command == "USER")
+				handleUser(it->second, data);
 		}
 		else
 		{
-			// std::string response = "You are not authorized!!!";
-			// send(clientFd, response.c_str(), response.length(), 0);　//ユーザーに見せる場合
-
-			std::cout << "You are not authorized!!!" << std::endl; //サーバー側の出力
+			// 許可されていないコマンドの場合、ログに出力し、エラーメッセージを送信
+			std::stringstream ss;
+			ss << it->second->getPort();
+			std::string port_str = ss.str();
+			
+			std::cout << "Unauthorized command from unregistered client " 
+						<< it->second->getHostname() 
+						<< ":" 
+						<< port_str 
+						<< " \"" 
+						<< command 
+						<< "\"" << std::endl;
+			
+			// クライアントにエラーメッセージを送信
+			sendToClient(clientFd, getServerPrefix() + " 451 * :You have not registered");
 		}
 	}
-
-	// std::cout << "Received: " << buffer << std::flush; // サーバー側が出力
-	// 単純なエコー応答（IRC形式）このsendがあると送ってくれた相手に送り返せる
-	// std::string response = ":server PRIVMSG client :" + std::string(buffer)
-		// + "\r\n";
-	// send(clientFd, response.c_str(), response.length(), 0);
+	else // 認証済みの場合
+	{
+		// 認証後のコマンドを処理
+		if (command == "EXIT")
+			disconnectClient(clientFd);
+		else if (command == "INFO")
+			serverInfo();
+		else if (command == "END")
+			throw std::runtime_error("END!");
+		else if (command == "PING")
+			serverPing(clientFd);
+		else if (command == "NICK")
+			handleNick(it->second, data);
+		else if (command == "JOIN")
+			handleJoin(it->second, data);
+		else if (command == "PRIVMSG")
+			handlePrivmsg(it->second, data);
+		else if (command == "KICK")
+			handleKick(it->second, data);
+		else if (command == "MODE")
+			handleMode(it->second, data);
+		else if (command == "INVITE")
+			handleInvite(it->second, data);
+		else
+		{
+			std::cout << "Unknown command: " << command << std::endl;
+			sendToClient(clientFd, getServerPrefix() + " 421 * " + command + " :Unknown command");
+		}
+	}
 	return CONNECT;
 }
 
@@ -144,10 +190,10 @@ void Server::setListeningSocketFd(int listeningSocketFd)
 
 void Server::setClientAuthentications(int newfd)
 {
-	Client newClient(newfd);
-	_client.insert(std::make_pair(newfd, newClient));
-	std::map<int, Client>::iterator it = _client.find(newfd);
-	it->second.setAuthenticated(false);
+	Client *newClient = new Client(newfd);
+	_clients.insert(std::make_pair(newfd, newClient));
+	std::map<int, Client*>::iterator it = _clients.find(newfd);
+	it->second->setAuthenticated(false);
 	std::cout << "Created new client for fd: " << newfd << std::endl;
 }
 
@@ -177,18 +223,41 @@ int Server::getListeningSocketFd(void) const
 	return (this->_listeningSocketFd);
 }
 
-std::map<int, Client> Server::getClientAuthentications(void) const
+std::map<int, Client*> Server::getClientAuthentications(void) const
 {
-	return (this->_client);
+	return (this->_clients);
 }
 
 Client* Server::getClient(int fd)
 {
 	std::cout << "getClient()" << std::endl;
-	std::map<int, Client>::iterator it = _client.find(fd);
-	if (it != _client.end())
-		return &(it->second);
+	std::map<int, Client*>::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+		return (it->second);
 	return NULL;
+}
+
+Channel* Server::getChannel(const std::string& channelName)
+{
+	std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
+	if (it != _channels.end())
+		return it->second;
+	return NULL;
+}
+
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second->getNickname() == nickname)
+			return it->second;
+	}
+	return NULL;
+}
+
+std::string Server::getServerPrefix() const
+{
+	return ":" + std::string("ircserv");
 }
 
 std::ostream &operator<<(std::ostream &out, const Server &server)
@@ -196,10 +265,10 @@ std::ostream &operator<<(std::ostream &out, const Server &server)
 	out << "Port to bind: " << server.getPort() << std::endl
 		<< "Password :" << server.getPassword() << std::endl
 		<< "Serverfd :" << server.getListeningSocketFd() << std::endl;
-	const std::map<int, Client> &authentications = server.getClientAuthentications();
-	for (std::map<int, Client>::const_iterator it = authentications.begin();
+	const std::map<int, Client*> &authentications = server.getClientAuthentications();
+	for (std::map<int, Client*>::const_iterator it = authentications.begin();
 		it != authentications.end(); it++)
-		out << "fd[" << it->first << "] 認証 :" << (it->second.isAuthenticated() ? "有効" : "無効") << std::endl;
+		out << "fd[" << it->first << "] 認証 :" << (it->second->isAuthenticated() ? "有効" : "無効") << std::endl;
 	return out;
 }
 

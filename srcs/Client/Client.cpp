@@ -1,4 +1,4 @@
-#include "../../include/IRC.hpp"
+#include "../../includes/IRC.hpp"
 
 Client::Client() : _fd(-1), _authenticated(false), _registered(false)
 {
@@ -30,6 +30,11 @@ const std::string &Client::getHostname(void) const
 	return (this->_hostname);
 }
 
+const int &Client::getPort(void) const
+{
+	return (this->_port);
+}
+
 bool Client::isAuthenticated(void) const
 {
 	return (this->_authenticated);
@@ -55,6 +60,21 @@ void Client::setUsername(const std::string &username)
 	this->_username = username;
 }
 
+void Client::setHostname(const std::string& hostname)
+{
+	this->_hostname = hostname;
+}
+
+void Client::setRealname(const std::string& realname)
+{
+	this->_realname = realname;
+}
+
+void Client::setPort(const int port)
+{
+	this->_port = port;
+}
+
 void Client::setAuthenticated(bool authenticated)
 {
 	this->_authenticated = authenticated;
@@ -78,47 +98,8 @@ bool Client::isInChannel(const std::string& channelName) const {
 	return this->_channels.find(channelName) != _channels.end();
 }
 
-void Client::setNewNickname(const int fd, const std::string &nickname)
-{
-	try
-	{
-		if (this->_fd != fd)
-			throw std::runtime_error(INVALID_FD);
-		setNickname(nickname);
-		checkAndCompleteRegistration();
-	}
-	catch (const std::exception &error)
-	{
-		std::cout << error.what() << std::endl;
-		return ;
-	}
-	std::cout << *this << std::endl;
-}
-
-void Client::setNewUsername(const int fd, const std::string &username)
-{
-	try
-	{
-		if (this->_fd != fd)
-			throw std::runtime_error(INVALID_FD);
-		setUsername(username);
-		checkAndCompleteRegistration();
-	}
-	catch (const std::exception &error)
-	{
-		std::cout << error.what() << std::endl;
-		return ;
-	}
-	std::cout << *this << std::endl;
-}
-
-void Client::checkAndCompleteRegistration(void)
-{
-	if (_authenticated && _authenticated && !_nickname.empty() && !_username.empty())
-	{
-		setRegistered(true);
-		std::cout << "Client " << _fd << " registration completed!" << std::endl;
-	}
+std::string Client::getFullIdentifier() const {
+    return _nickname + "!" + _username + "@" + _hostname;
 }
 
 // 出力オペレータのオーバーロード
