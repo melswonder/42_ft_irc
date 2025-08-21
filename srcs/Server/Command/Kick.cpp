@@ -16,7 +16,6 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 	// コメントがある場合
 	if (data.size() > 3)
 	{
-		comment = (data.size() > 3) ? data[3] : "";
 		// コメントにコロンが含まれているかチェックし、再構築
 		if (data[3][0] == ':')
 		{
