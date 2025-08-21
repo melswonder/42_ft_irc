@@ -4,8 +4,8 @@
 void Server::handlePass(Client* client, const std::vector<std::string> &data)
 {
 	std::string password = data[1];
-	password.erase(password.find_last_not_of(" \r\n\t") + 1);
-	password.erase(0, password.find_first_not_of(" \r\n\t"));
+	// password.erase(password.find_last_not_of(" \r\n\t") + 1);
+	// password.erase(0, password.find_first_not_of(" \r\n\t"));
 	password = xorEncryptDecrypt(password);
 	// std::cout << "Serverpass[" << _password << "]len:" << _password.length() << std::endl
 	// 			<< "Clientpass[" << password << "]len:" << _password.length() << std::endl;
@@ -28,7 +28,7 @@ void Server::handlePass(Client* client, const std::vector<std::string> &data)
 	{
 		// 認証完了
 		client->setRegistered(true);
-		// // RPL_WELCOME (001) を送信
-		// sendToClient(client->getFd(), getServerPrefix() + " 001 " + client->getNickname() + " :Welcome to the IRC Network " + client->getFullIdentifier());
+		// RPL_WELCOME (001) を送信
+		sendToClient(client->getFd(), getServerPrefix() + " 001 " + client->getNickname() + " :Welcome to the IRC Network " + client->getFullIdentifier());
 	}
 }

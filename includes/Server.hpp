@@ -3,8 +3,7 @@
 #include "IRC.hpp"
 #define KEY "hello"
 
-enum Situation
-{
+enum Situation {
 	CONNECT,
 	DISCONNECT
 };
@@ -18,28 +17,29 @@ private:
 	int _listeningSocketFd;
 	struct sockaddr_in _server_addr;
 	std::vector<struct pollfd> _pollFds;
-	std::map<int, Client *> _clients;
-	std::map<std::string, Channel *> _channels;
+	std::map<int, Client*> _clients;
+	std::map<std::string, Channel*> _channels;
 
 	void handleNewConnection();
 	Situation handleClientData(int clientFd);
 	void disconnectClient(int clientFd);
 	void serverInfo();
 	void serverPing(int clientFd);
-	void handlePass(Client *client, const std::vector<std::string> &data);
-	void handleNick(Client *client, const std::vector<std::string> &data);
+	void handlePass(Client* client, const std::vector<std::string> &data);
+	void handleNick(Client* client, const std::vector<std::string> &data);
 	void handleUser(Client *client, const std::vector<std::string> &data);
 	void handleJoin(Client *client, const std::vector<std::string> &data);
-	void handlePrivmsg(Client *client, const std::vector<std::string> &data);
-	void handleKick(Client *client, const std::vector<std::string> &data);
-	void handleMode(Client *client, const std::vector<std::string> &data);
-	void handleInvite(Client *client, const std::vector<std::string> &data);
-	void handleTopic(Client *client, const std::vector<std::string> &data);
-	Channel *getOrCreateChannel(const std::string &channelName);
-	Client *getClientByNickname(const std::string &nickname);
-	bool isValidNickname(const std::string &nick);
+	void handlePrivmsg(Client* client, const std::vector<std::string> &data);
+	void handleKick(Client* client, const std::vector<std::string> &data);
+	void handleMode(Client* client, const std::vector<std::string> &data);
+	void handleInvite(Client* client, const std::vector<std::string> &data);
+	void handleTopic(Client* client, const std::vector<std::string> &data);
+	Channel* getOrCreateChannel(const std::string& channelName);
+	Client* getClientByNickname(const std::string& nickname);
+	bool isValidNickname(const std::string& nick);
 
 public:
+
 	Server();
 	~Server();
 	void serverInit(char *argv[]);
@@ -60,19 +60,17 @@ public:
 	int getPort(void) const;
 	std::string getPassword(void) const;
 	int getListeningSocketFd(void) const;
-	std::map<int, Client *> getClientAuthentications(void) const;
+	std::map<int, Client*> getClientAuthentications(void) const;
 
 	// Client
-	Client *getClient(int fd);
-	Channel *getChannel(const std::string &channelName);
+	Client* getClient(int fd);
+	Channel* getChannel(const std::string& channelName);
 
 	std::string getServerPrefix() const;
 
-	void sendNumericReply(int clientFd, const std::string& serverName, const std::string& clientNick, const std::string& code, const std::string& message);
-
-	void sendToClient(int clientFd, const std::string &message);
-	void broadcastToChannel(const std::string &channelName, const std::string &message, Client *sender = NULL);
-	bool isValidChannelName(const std::string &name) const;
+	void sendToClient(int clientFd, const std::string& message);
+	void broadcastToChannel(const std::string& channelName, const std::string& message, Client* sender = NULL);
+	bool isValidChannelName(const std::string& name) const;
 
 	// void setSignal(int signal) {this->_signal = signal;}
 };
