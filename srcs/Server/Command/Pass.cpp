@@ -6,7 +6,7 @@ void Server::handlePass(Client* client, const std::vector<std::string> &data)
 	// パラメータのチェック: ERR_NEEDMOREPARAMS (461)
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " PASS :Not enough parameters");
 		return;
 	}
 
