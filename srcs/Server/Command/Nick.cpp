@@ -27,6 +27,7 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	}
 
 	std::string newNick = data[1];
+	newNick.erase(newNick.find_last_not_of(" \r\n\t") + 1);
 
 	// ニックネームの有効性チェック
 	if (!isValidNickname(newNick))
@@ -48,18 +49,22 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	std::string oldNick = client->getNickname();
 	client->setNickname(newNick);
 
+	// 認証完了判定（NICK と USER 両方受けているか）
+	if (!client->isRegistered()
+	&& client->isAuthenticated()
+	&& !client->getNickname().empty()
+	&& !client->getUsername().empty())
+	{
+		client->setRegistered(true);
+		sendWelcomeMessages(client);
+		// getOrCreateChannel(client->getNickname()); もしかしたらつくかも？　irssi側ではnicknameのチャンネルを探していたため
+
+	}
+
 	// ニックネーム変更の通知
 	// 変更前と変更後の両方のユーザーに通知
 	// :old_nick NICK :new_nick
 	std::string nickMsg = ":" + oldNick + " NICK :" + newNick;
 	sendToClient(client->getFd(), nickMsg);
-
-	// ニックネーム変更によって認証が完了するかチェック
-	if (!client->isRegistered() && client->isAuthenticated() && !client->getNickname().empty() && !client->getUsername().empty())
-	{
-		// 認証完了
-		client->setRegistered(true);
-		// RPL_WELCOME (001) を送信
-		sendToClient(client->getFd(), getServerPrefix() + " 001 " + client->getNickname() + " :Welcome to the IRC Network " + client->getFullIdentifier());
-	}
+	
 }
