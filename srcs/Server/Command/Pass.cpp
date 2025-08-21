@@ -3,6 +3,13 @@
 //=== PASS ===
 void Server::handlePass(Client* client, const std::vector<std::string> &data)
 {
+	// パラメータのチェック: ERR_NEEDMOREPARAMS (461)
+	if (data.size() < 2)
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
+		return;
+	}
+
 	std::string password = data[1];
 	// password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	// password.erase(0, password.find_first_not_of(" \r\n\t"));
