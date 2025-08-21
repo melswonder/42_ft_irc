@@ -11,21 +11,25 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 
 	std::string channelName = data[1];
 	std::string targetNick = data[2];
-	std::string comment = (data.size() > 3) ? data[3] : "";
+	std::string comment;
 
-	// コメントにコロンが含まれているかチェックし、再構築
-	if (data.size() > 3 && data[3][0] == ':')
+	// コメントがある場合
+	if (data.size() > 3)
 	{
-		comment = data[3].substr(1);
-		for (size_t i = 4; i < data.size(); ++i)
-			comment += " " + data[i];
-	}
-	else
-	{
-		// コロンがない場合、プロトコル違反とみなし、エラーを返す
-		// この場合、ERR_NEEDMOREPARAMS (461) を返す
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
-		return;
+		// コメントにコロンが含まれているかチェックし、再構築
+		if (data[3][0] == ':')
+		{
+			comment = data[3].substr(1);
+			for (size_t i = 4; i < data.size(); ++i)
+				comment += " " + data[i];
+		}
+		else
+		{
+			// コロンがない場合、プロトコル違反とみなし、エラーを返す
+			// この場合、ERR_NEEDMOREPARAMS (461) を返す
+			sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
+			return;
+		}
 	}
 
 	// チャンネルの存在チェック: ERR_NOSUCHCHANNEL (403)
