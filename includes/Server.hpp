@@ -39,7 +39,8 @@ private:
 	Channel *getOrCreateChannel(const std::string &channelName);
 	Client *getClientByNickname(const std::string &nickname);
 	bool isValidNickname(const std::string &nick);
-	void executeSingleKickLogic(Server* server, Client* kicker, Channel* channel, Client* target, const std::string& comment);
+	void executeSingleKickLogic(Server *server, Client *kicker, Channel *channel, Client *target, const std::string &comment);
+	void handleKickLogic(Client *client, const std::string &channelName, const std::string &targetNick, const std::string &comment);
 
 public:
 	Server();

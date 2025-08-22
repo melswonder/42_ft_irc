@@ -26,6 +26,13 @@
 #define GRE "\033[1;32m" //-> for green color
 #define YEL "\033[1;33m" //-> for yellow color
 
+#define ERR_NOSUCHNICK "401"
+#define ERR_NOSUCHCHANNEL "403"
+#define ERR_USERNOTINCHANNEL "441"
+#define ERR_NOTONCHANNEL "442"
+#define ERR_NEEDMOREPARAMS "461"
+#define ERR_CHANOPRIVSNEEDED "482"
+
 class Client;
 class Channel;
 class Server;

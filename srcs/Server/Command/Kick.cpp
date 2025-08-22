@@ -1,41 +1,80 @@
 #include "../../../includes/IRC.hpp"
 
+// 単一のキック処理を実行するヘルパー関数
 void Server::executeSingleKickLogic(Server* server, Client* kicker, Channel* channel, Client* target, const std::string& comment)
 {
-	// チャンネルからターゲットを削除
 	channel->removeMember(target);
 
-	// KICKメッセージの構築
 	std::string kickMsg = ":" + kicker->getFullIdentifier() + " KICK " + channel->getName() + " " + target->getNickname();
 	if (!comment.empty())
 		kickMsg += " :" + comment;
 
-	// チャンネルメンバーとターゲットに通知
-	server->broadcastToChannel(channel->getName(), kickMsg); // チャンネル全員にキックメッセージをブロードキャスト
-	server->sendToClient(target->getFd(), kickMsg); // キックされたユーザーにも通知
+	server->broadcastToChannel(channel->getName(), kickMsg);
+	server->sendToClient(target->getFd(), kickMsg);
 
-	// チャンネルが空になったら削除する
 	if (channel->isEmpty())
 	{
-		// マップからチャンネルを見つけて削除
 		std::map<std::string, Channel*>::iterator it = server->_channels.find(channel->getName());
 		if (it != server->_channels.end())
 		{
-			delete it->second; // チャンネルオブジェクトを削除
-			server->_channels.erase(it); // マップからエントリを削除
+			delete it->second;
+			server->_channels.erase(it);
 		}
 	}
+}
+
+// 共通ロジックをまとめたヘルパー関数
+void Server::handleKickLogic(Client* client, const std::string& channelName, const std::string& targetNick, const std::string& comment)
+{
+	// チャンネルの存在チェック
+	std::map<std::string, Channel*>::iterator channelIt = _channels.find(channelName);
+	if (channelIt == _channels.end())
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOSUCHCHANNEL + " " + client->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+	Channel* channel = channelIt->second;
+
+	// 実行者がチャンネルメンバーかチェック
+	if (!channel->isMember(client))
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOTONCHANNEL + " " + client->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// 実行者がチャンネルオペレーターかチェック
+	if (!channel->isOperator(client))
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_CHANOPRIVSNEEDED + " " + client->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// ターゲットユーザーの存在チェックとチャンネル内メンバーシップの確認
+	Client* targetClient = getClientByNickname(targetNick);
+	if (!targetClient)
+	{ 
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOSUCHNICK + " " + client->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+	if (!channel->isMember(targetClient))
+	{
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_USERNOTINCHANNEL + " " + client->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		return;
+	}
+
+	// KICKの実行
+	executeSingleKickLogic(this, client, channel, targetClient, comment);
 }
 
 void Server::handleKick(Client* client, const std::vector<std::string> &data)
 {
 	if (data.size() < 3)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Not enough parameters");
 		return;
 	}
 
-	// コメント部分
+	// コメント部分のパース
 	std::string comment = "";
 	if (data.size() > 3)
 	{
@@ -47,123 +86,39 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 		}
 		else
 		{
-			// 単一の単語の場合
 			if (data.size() == 4)
 				comment = data[3];
 			else
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Invalid comment format or too many parameters");
+				sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Invalid comment format or too many parameters");
 				return;
 			}
 		}
 	}
 
-	// チャンネル名とターゲットニックネームのリストをパース
 	std::vector<std::string> channelNames = split(data[1], ',');
 	std::vector<std::string> targetNicks = split(data[2], ',');
 
-	// RFC 2812のKICKコマンドの複数パラメータのルールチェック
 	if (!((channelNames.size() == 1 && targetNicks.size() >= 1) || (channelNames.size() > 1 && channelNames.size() == targetNicks.size())))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " KICK :Invalid channel/user combination for KICK command");
+		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Invalid channel/user combination for KICK command");
 		return;
 	}
 
-	// 単一チャンネル
+	// 複数ユーザーを単一チャンネルからキックする場合
 	if (channelNames.size() == 1)
 	{
-		std::string currentChannelName = channelNames[0]; // 単一のチャンネル名を取得
-
-		// チャンネルの存在チェック: ERR_NOSUCHCHANNEL (403)
-		std::map<std::string, Channel*>::iterator channelIt = _channels.find(currentChannelName);
-		if (channelIt == _channels.end())
-		{
-			sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + currentChannelName + " :No such channel");
-			return; // このチャンネルが存在しないなら、このKICKコマンド全体を中断
-		}
-		Channel* channel = channelIt->second;
-
-		// 実行者がチャンネルメンバーかチェック: ERR_NOTONCHANNEL (442)
-		if (!channel->isMember(client))
-		{
-			sendToClient(client->getFd(), getServerPrefix() + " 442 " + client->getNickname() + " " + currentChannelName + " :You're not on that channel");
-			return;
-		}
-
-		// 実行者がチャンネルオペレーターかチェック: ERR_CHANOPRIVSNEEDED (482)
-		if (!channel->isOperator(client))
-		{
-			sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + currentChannelName + " :You're not channel operator");
-			return;
-		}
-
-		// 全てのターゲットユーザーを処理
 		for (size_t i = 0; i < targetNicks.size(); ++i)
 		{
-			std::string targetNick = targetNicks[i];
-			Client* targetClient = getClientByNickname(targetNick);
-			if (!targetClient) // ネットワーク上に存在しない
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + targetNick + " :No such nick/channel");
-				continue; // 次のユーザーへ (このユーザーのキックは失敗)
-			}
-			if (!channel->isMember(targetClient)) // チャンネル内にいない
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 441 " + client->getNickname() + " " + targetNick + " " + currentChannelName + " :They aren't on that channel");
-				continue; // 次のユーザーへ (このユーザーのキックは失敗)
-			}
-			
-			// KICKの実行
-			executeSingleKickLogic(this, client, channel, targetClient, comment);
+			handleKickLogic(client, channelNames[0], targetNicks[i], comment);
 		}
 	}
-	// 複数チャンネル
+	// 複数チャンネルから対応するユーザーをキックする場合
 	else
 	{
 		for (size_t i = 0; i < channelNames.size(); ++i)
 		{
-			std::string currentChannelName = channelNames[i];
-			std::string currentTargetNick = targetNicks[i];
-
-			// チャンネルの存在チェック: ERR_NOSUCHCHANNEL (403)
-			std::map<std::string, Channel*>::iterator channelIt = _channels.find(currentChannelName);
-			if (channelIt == _channels.end())
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + currentChannelName + " :No such channel");
-				continue; // 次のチャンネル/ユーザーペアへ
-			}
-			Channel* channel = channelIt->second;
-
-			// 実行者がチャンネルメンバーかチェック: ERR_NOTONCHANNEL (442)
-			if (!channel->isMember(client))
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 442 " + client->getNickname() + " " + currentChannelName + " :You're not on that channel");
-				continue;
-			}
-
-			// 実行者がチャンネルオペレーターかチェック: ERR_CHANOPRIVSNEEDED (482)
-			if (!channel->isOperator(client))
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + currentChannelName + " :You're not channel operator");
-				continue;
-			}
-
-			// ターゲットユーザーの存在チェック: ERR_NOSUCHNICK (401)
-			// ターゲットがチャンネル内にいるかどうかも確認
-			Client* targetClient = getClientByNickname(currentTargetNick);
-			if (!targetClient) // ネットワーク上に存在しない
-			{ 
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + currentTargetNick + " :No such nick/channel");
-				continue;
-			}
-			if (!channel->isMember(targetClient)) // チャンネル内にいない
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 441 " + client->getNickname() + " " + currentTargetNick + " " + currentChannelName + " :They aren't on that channel");
-				continue;
-			}
-
-			// KICKの実行
-			executeSingleKickLogic(this, client, channel, targetClient, comment);
+			handleKickLogic(client, channelNames[i], targetNicks[i], comment);
 		}
 	}
 }
