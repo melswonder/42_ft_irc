@@ -39,48 +39,55 @@ void Server::handleJoin(Client *client, const std::vector<std::string> &data)
 	}
 
 	std::string command = data[0];
-	std::string channelName = data[1];
-	std::string key;
+	std::vector<std::string> channelNames = split(data[1], ',');
+	std::vector<std::string> keys;
 	if (data.size() == 3)
-		key = data[2];
+		keys = split(data[2], ',');
 
-	if (!(isValidChannelName(channelName)))
-	{
-		sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + channelName + " :No such channel");
-		return;
+	for (size_t i = 0; i < channelNames.size(); ++i) {
+		std::string channelName = channelNames[i];
+		std::string key = "";
+		if (keys.size() > i)
+			key = keys[i];
+
+		if (!(isValidChannelName(channelName)))
+		{
+			sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + channelName + " :No such channel");
+			continue;
+		}
+	
+		// チャンネルの存在を確認
+		Channel* channel = getOrCreateChannel(channelName);
+	
+		if (!channel->canJoin(client, key))
+		{
+			// 上限
+			if (channel->getUserLimit() > 0 && static_cast<int>(channel->getMembers().size()) >= channel->getUserLimit())
+				sendToClient(client->getFd(), getServerPrefix() + " 471 " + client->getNickname() + " " + channelName + " :Cannot join channel (+l)");
+			// キー設定あり
+			else if (!channel->getKey().empty() && channel->getKey() != key)
+				sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + channelName + " :Cannot join channel (+k)");
+			// 招待制
+			else if (channel->isInviteOnly() && !channel->isInvited(client))
+				sendToClient(client->getFd(), getServerPrefix() + " 473 " + client->getNickname() + " " + channelName + " :Cannot join channel (+i)");
+			continue;
+		}
+	
+		// クライアントをチャンネルに参加させる
+		channel->addMember(client);
+		// 招待リストから削除
+		channel->removeFromInviteList(client);
+	
+		// 参加したことをクライアントに通知
+		std::string joinMsg = ":" + client->getFullIdentifier() + " JOIN :" + channelName;
+		broadcastToChannel(channelName, joinMsg);
+	
+		// トピックがあれば送信
+		if (!channel->getTopic().empty())
+			sendToClient(client->getFd(), getServerPrefix() + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic());
+	
+		// 名前リストを送信
+		sendToClient(client->getFd(), getServerPrefix() + " 353 " + client->getNickname() + " = " + channelName + " :" + channel->getMembersList());
+		sendToClient(client->getFd(), getServerPrefix() + " 366 " + client->getNickname() + " " + channelName + " :End of /NAMES list");
 	}
-
-	// チャンネルの存在を確認
-	Channel* channel = getOrCreateChannel(channelName);
-
-	if (!channel->canJoin(client, key))
-	{
-		// 上限
-		if (channel->getUserLimit() > 0 && static_cast<int>(channel->getMembers().size()) >= channel->getUserLimit())
-			sendToClient(client->getFd(), getServerPrefix() + " 471 " + client->getNickname() + " " + channelName + " :Cannot join channel (+l)");
-		// キー設定あり
-		else if (!channel->getKey().empty() && channel->getKey() != key)
-			sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + channelName + " :Cannot join channel (+k)");
-		// 招待制
-		else if (channel->isInviteOnly() && !channel->isInvited(client))
-			sendToClient(client->getFd(), getServerPrefix() + " 473 " + client->getNickname() + " " + channelName + " :Cannot join channel (+i)");
-		return;
-	}
-
-	// クライアントをチャンネルに参加させる
-	channel->addMember(client);
-	// 招待リストから削除
-	channel->removeFromInviteList(client);
-
-	// 参加したことをクライアントに通知
-	std::string joinMsg = ":" + client->getFullIdentifier() + " JOIN :" + channelName;
-	broadcastToChannel(channelName, joinMsg);
-
-	// トピックがあれば送信
-	if (!channel->getTopic().empty())
-		sendToClient(client->getFd(), getServerPrefix() + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic());
-
-	// 名前リストを送信
-	sendToClient(client->getFd(), getServerPrefix() + " 353 " + client->getNickname() + " = " + channelName + " :" + channel->getMembersList());
-	sendToClient(client->getFd(), getServerPrefix() + " 366 " + client->getNickname() + " " + channelName + " :End of /NAMES list");
 }
