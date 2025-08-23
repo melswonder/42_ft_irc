@@ -19,32 +19,63 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 	// パラメータが2つしかない場合、現在のモードを返す
 	if (data.size() == 2)
 	{
-		// 例: :ircserv 324 <nick> <channel> +itk
 		std::string modeString = "+";
 		if (channel->isInviteOnly()) modeString += "i";
 		if (channel->isTopicRestricted()) modeString += "t";
 		if (!channel->getKey().empty()) modeString += "k";
+		if (channel->getUserLimit() > 0) modeString += "l";
 		// RPL_CHANNELMODEIS (324) を送信
 		sendToClient(client->getFd(), getServerPrefix() + " 324 " + client->getNickname() + " " + target + " " + modeString);
 		return;
 	}
 
-	// 変更モードのパース
-	std::string modeFlags = data[2];
+	// 変更モードのパース - data[2]以降をすべて処理する
 	bool addingMode = true;
-	size_t paramIndex = 3;
+	size_t dataIndex = 2;
+	
+	// 成功したモード変更を記録
+	std::string appliedModes = "";
+	std::vector<std::string> appliedParams;
+	bool currentSign = true; // true for +, false for -
+	bool needSignInOutput = true; // 最初は必ず符号が必要
 
-	for (size_t i = 0; i < modeFlags.length(); ++i)
+	while (dataIndex < data.size())
 	{
-		char mode = modeFlags[i];
+		std::string token = data[dataIndex];
+		
+		// トークンがモードフラグかどうかをチェック（+または-で始まる）
+		if (token.empty() || (token[0] != '+' && token[0] != '-'))
+		{
+			// モードフラグではない場合、次のトークンへ
+			dataIndex++;
+			continue;
+		}
+		
+		// モードフラグを処理
+		dataIndex++; // 次のトークンへ移動（パラメータがあるかもしれない）
+		
+		for (size_t i = 0; i < token.length(); ++i)
+		{
+			char mode = token[i];
+		
 		if (mode == '+')
 		{
 			addingMode = true;
+			if (currentSign != true)
+			{
+				currentSign = true;
+				needSignInOutput = true;
+			}
 			continue;
 		}
 		else if (mode == '-')
 		{
 			addingMode = false;
+			if (currentSign != false)
+			{
+				currentSign = false;
+				needSignInOutput = true;
+			}
 			continue;
 		}
 
@@ -54,76 +85,177 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 			if (!channel->isOperator(client))
 			{
 				sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + target + " :You're not channel operator");
-				return;
+				continue; // エラーでも他のモードは処理を続ける
 			}
 		}
 
 		// 各モードの処理
 		if (mode == 'i')
+		{
 			channel->setInviteOnly(addingMode);
+			if (needSignInOutput)
+			{
+				appliedModes += (addingMode ? "+" : "-");
+				needSignInOutput = false;
+			}
+			appliedModes += mode;
+		}
 		else if (mode == 't')
+		{
 			channel->setTopicRestricted(addingMode);
-		else if (mode == 'k')
-		{
-			if (addingMode)
+			if (needSignInOutput)
 			{
-				if (paramIndex >= data.size())
-				{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +k");
-					return;
-				}
-				channel->setKey(data[paramIndex++]);
+				appliedModes += (addingMode ? "+" : "-");
+				needSignInOutput = false;
 			}
-			else
-			{
-				if (paramIndex >= data.size() || channel->getKey() != data[paramIndex])
-				{
-					// キーが指定されていない、または一致しない場合はエラー
-					sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + target + " :Cannot join channel (+k)");
-					return;
-				}
-				channel->setKey(""); // キーを削除
-				paramIndex++;
-			}
+			appliedModes += mode;
 		}
-		else if (mode == 'l')
-		{
-			if (addingMode)
+			else if (mode == 'k')
 			{
-				if (paramIndex >= data.size())
+				if (addingMode)
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +l");
-					return;
+					if (dataIndex >= data.size())
+					{
+						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +k");
+						continue;
+					}
+					std::string key = data[dataIndex++];
+					channel->setKey(key);
+					if (needSignInOutput)
+					{
+						appliedModes += "+";
+						needSignInOutput = false;
+					}
+					appliedModes += mode;
+					appliedParams.push_back(key);
 				}
-				int limit = atoi(data[paramIndex++].c_str());
-				if (limit < 0)
+				else
 				{
+					if (dataIndex >= data.size())
+					{
+						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for -k");
+						continue;
+					}
+					std::string providedKey = data[dataIndex++];
+					if (channel->getKey() != providedKey)
+					{
+						sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + target + " :Cannot remove channel key (wrong key)");
+						continue;
+					}
+					channel->setKey("");
+					if (needSignInOutput)
+					{
+						appliedModes += "-";
+						needSignInOutput = false;
+					}
+					appliedModes += mode;
+					appliedParams.push_back(providedKey);
+				}
+			}
+			else if (mode == 'l')
+			{
+				if (addingMode)
+				{
+					if (dataIndex >= data.size())
+					{
+						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +l");
+						continue;
+					}
+					std::string limitStr = data[dataIndex++];
+					int limit = atoi(limitStr.c_str());
+					if (limit <= 0)
+					{
 						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Invalid limit value");
-						return;
+						continue;
+					}
+					channel->setUserLimit(limit);
+					if (needSignInOutput)
+					{
+						appliedModes += "+";
+						needSignInOutput = false;
+					}
+					appliedModes += mode;
+					appliedParams.push_back(limitStr);
 				}
-				channel->setUserLimit(limit);
+				else
+				{
+					channel->setUserLimit(0);
+					if (needSignInOutput)
+					{
+						appliedModes += "-";
+						needSignInOutput = false;
+					}
+					appliedModes += mode;
+				}
 			}
-			else
-				channel->setUserLimit(0); // 制限を解除
-		}
-		else if (mode == 'o')
-		{
-			if (paramIndex >= data.size())
+			else if (mode == 'o')
 			{
+				if (dataIndex >= data.size())
+				{
 					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +o/-o");
-					return;
+					continue;
+				}
+				std::string userNick = data[dataIndex++];
+				Client* targetClient = getClientByNickname(userNick);
+				if (!targetClient)
+				{
+					sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + userNick + " :No such nick/channel");
+					continue;
+				}
+				if (!channel->isMember(targetClient))
+				{
+					sendToClient(client->getFd(), getServerPrefix() + " 441 " + client->getNickname() + " " + userNick + " " + target + " :They aren't on that channel");
+					continue;
+				}
+				
+				if (addingMode)
+				{
+					if (!channel->isOperator(targetClient))
+					{
+						channel->addOperator(targetClient);
+						if (needSignInOutput)
+						{
+							appliedModes += "+";
+							needSignInOutput = false;
+						}
+						appliedModes += mode;
+						appliedParams.push_back(userNick);
+					}
+				}
+				else
+				{
+					if (channel->isOperator(targetClient))
+					{
+						channel->removeOperator(targetClient);
+						if (needSignInOutput)
+						{
+							appliedModes += "-";
+							needSignInOutput = false;
+						}
+						appliedModes += mode;
+						appliedParams.push_back(userNick);
+					}
+				}
 			}
-			std::string userNick = data[paramIndex++];
-			Client* targetClient = getClientByNickname(userNick);
-			if (!targetClient || !channel->isMember(targetClient))
-			{
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + userNick + " :No such nick/channel");
-				return;
-			}
-			if (addingMode)
-				channel->addOperator(targetClient);
 			else
-				channel->removeOperator(targetClient);
+			{
+				// 未知のモードフラグ
+				sendToClient(client->getFd(), getServerPrefix() + " 472 " + client->getNickname() + " " + mode + " :is unknown mode char to me");
+			}
 		}
+	}
+
+	// 実際に適用されたモード変更があれば、チャンネルのメンバーに通知
+	if (!appliedModes.empty())
+	{
+		std::string modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " MODE " + target + " " + appliedModes;
+		
+		// パラメータがあれば追加
+		for (size_t i = 0; i < appliedParams.size(); ++i) {
+			modeResponse += " " + appliedParams[i];
+		}
+		
+		// チャンネルの全メンバーに送信
+		broadcastToChannel(target, modeResponse, NULL);
 	}
 }
