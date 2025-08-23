@@ -22,7 +22,7 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	// パラメータの不足を確認
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 431 " + client->getNickname() + " :No nickname given");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NONICKNAMEGIVEN + client->getNickname() + " :No nickname given");
 		return;
 	}
 
@@ -32,7 +32,7 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	// ニックネームの有効性チェック
 	if (!isValidNickname(newNick))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 432 " + client->getNickname() + " " + newNick + " :Erroneous nickname");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_ERRONEUSNICKNAME + client->getNickname() + " " + newNick + " :Erroneous nickname");
 		return;
 	}
 
@@ -41,7 +41,7 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	if (existingClient && existingClient != client)
 	{
 		// ニックネームがすでに使用されている
-		sendToClient(client->getFd(), getServerPrefix() + " 433 " + client->getNickname() + " " + newNick + " :Nickname is already in use");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NICKNAMEINUSE + client->getNickname() + " " + newNick + " :Nickname is already in use");
 		return;
 	}
 

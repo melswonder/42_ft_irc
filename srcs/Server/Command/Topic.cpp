@@ -3,7 +3,7 @@
 void Server::handleTopic(Client* client, const std::vector<std::string> &data) {
 	// パラメータのチェック: ERR_NEEDMOREPARAMS (461)
 	if (data.size() < 2) {
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " TOPIC :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " TOPIC :Not enough parameters");
 		return;
 	}
 
@@ -12,13 +12,13 @@ void Server::handleTopic(Client* client, const std::vector<std::string> &data) {
 
 	// チャンネルの存在チェック: ERR_NOSUCHCHANNEL (403)
 	if (!channel) {
-		sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + channelName + " :No such channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHCHANNEL + client->getNickname() + " " + channelName + " :No such channel");
 		return;
 	}
 
 	// クライアントがチャンネルにいるか確認: ERR_NOTONCHANNEL (442)
 	if (!channel->isMember(client)) {
-		sendToClient(client->getFd(), getServerPrefix() + " 442 " + client->getNickname() + " " + channelName + " :You're not on that channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTONCHANNEL + client->getNickname() + " " + channelName + " :You're not on that channel");
 		return;
 	}
 
@@ -26,10 +26,10 @@ void Server::handleTopic(Client* client, const std::vector<std::string> &data) {
 	if (data.size() == 2) {
 		if (channel->getTopic().empty()) {
 			// RPL_NOTOPIC (331) を送信: トピックが設定されていない
-			sendToClient(client->getFd(), getServerPrefix() + " 331 " + client->getNickname() + " " + channelName + " :No topic is set");
+			sendToClient(client->getFd(), getServerPrefix() + RPL_NOTOPIC + client->getNickname() + " " + channelName + " :No topic is set");
 		} else {
 			// RPL_TOPIC (332) を送信: トピックを表示
-			sendToClient(client->getFd(), getServerPrefix() + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic());
+			sendToClient(client->getFd(), getServerPrefix() + RPL_TOPIC + client->getNickname() + " " + channelName + " :" + channel->getTopic());
 		}
 		return;
 	}
@@ -39,7 +39,7 @@ void Server::handleTopic(Client* client, const std::vector<std::string> &data) {
 	// チャンネルモードの確認: ERR_CHANOPRIVSNEEDED (482)
 	// チャンネルモードが +t で、クライアントがオペレーターでない場合
 	if (channel->isTopicRestricted() && !channel->isOperator(client)) {
-		sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + channelName + " :You're not channel operator");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + channelName + " :You're not channel operator");
 		return;
 	}
 

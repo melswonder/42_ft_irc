@@ -4,7 +4,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 {
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters");
 		return;
 	}
 
@@ -12,7 +12,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 	Channel* channel = getChannel(target);
 	if (!channel)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + target + " :No such channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHCHANNEL + client->getNickname() + " " + target + " :No such channel");
 		return;
 	}
 
@@ -25,7 +25,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 		if (channel->isTopicRestricted()) modeString += "t";
 		if (!channel->getKey().empty()) modeString += "k";
 		// RPL_CHANNELMODEIS (324) を送信
-		sendToClient(client->getFd(), getServerPrefix() + " 324 " + client->getNickname() + " " + target + " " + modeString);
+		sendToClient(client->getFd(), getServerPrefix() + RPL_CHANNELMODEIS + client->getNickname() + " " + target + " " + modeString);
 		return;
 	}
 
@@ -53,7 +53,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 		{
 			if (!channel->isOperator(client))
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + target + " :You're not channel operator");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + target + " :You're not channel operator");
 				return;
 			}
 		}
@@ -69,7 +69,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 			{
 				if (paramIndex >= data.size())
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +k");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +k");
 					return;
 				}
 				channel->setKey(data[paramIndex++]);
@@ -79,7 +79,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				if (paramIndex >= data.size() || channel->getKey() != data[paramIndex])
 				{
 					// キーが指定されていない、または一致しない場合はエラー
-					sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + target + " :Cannot join channel (+k)");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_BADCHANNELKEY + client->getNickname() + " " + target + " :Cannot join channel (+k)");
 					return;
 				}
 				channel->setKey(""); // キーを削除
@@ -92,13 +92,13 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 			{
 				if (paramIndex >= data.size())
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +l");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +l");
 					return;
 				}
 				int limit = atoi(data[paramIndex++].c_str());
 				if (limit < 0)
 				{
-						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Invalid limit value");
+						sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Invalid limit value");
 						return;
 				}
 				channel->setUserLimit(limit);
@@ -110,14 +110,14 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 		{
 			if (paramIndex >= data.size())
 			{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +o/-o");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +o/-o");
 					return;
 			}
 			std::string userNick = data[paramIndex++];
 			Client* targetClient = getClientByNickname(userNick);
 			if (!targetClient || !channel->isMember(targetClient))
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + userNick + " :No such nick/channel");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHNICK + client->getNickname() + " " + userNick + " :No such nick/channel");
 				return;
 			}
 			if (addingMode)

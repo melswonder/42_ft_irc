@@ -4,19 +4,19 @@ void Server::handlePrivmsg(Client* client, const std::vector<std::string> &data)
 {
 	if (!client->isRegistered())
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 451 " + client->getNickname() + " :You have not registered");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTREGISTERED + client->getNickname() + " :You have not registered");
 		return;
 	}
 
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 411 " + client->getNickname() + " :No recipient given (PRIVMSG)");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NORECIPIENT + client->getNickname() + " :No recipient given (PRIVMSG)");
 		return;
 	}
 
 	if (data.size() < 3)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 412 " + client->getNickname() + " :No text to send");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTEXTTOSEND + client->getNickname() + " :No text to send");
 		return;
 	}
 
@@ -33,7 +33,7 @@ void Server::handlePrivmsg(Client* client, const std::vector<std::string> &data)
 	}
 	else
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 412 " + client->getNickname() + " :No text to send");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTEXTTOSEND + client->getNickname() + " :No text to send");
 		return;
 	}
 
@@ -47,12 +47,12 @@ void Server::handlePrivmsg(Client* client, const std::vector<std::string> &data)
 			Channel* channel = getChannel(target);
 			if (!channel)
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + target + " :No such nick/channel");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHNICK + client->getNickname() + " " + target + " :No such nick/channel");
 				continue;
 			}
 			if (!channel->isMember(client))
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 404 " + client->getNickname() + " " + target + " :Cannot send to channel");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_CANNOTSENDTOCHAN + client->getNickname() + " " + target + " :Cannot send to channel");
 				continue;
 			}
 			
@@ -64,7 +64,7 @@ void Server::handlePrivmsg(Client* client, const std::vector<std::string> &data)
 			Client* targetClient = getClientByNickname(target);
 			if (!targetClient)
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + target + " :No such nick/channel");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHNICK + client->getNickname() + " " + target + " :No such nick/channel");
 				continue;
 			}
 
