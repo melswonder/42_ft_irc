@@ -41,6 +41,7 @@ private:
 	bool isValidNickname(const std::string &nick);
 	void executeSingleKickLogic(Server *server, Client *kicker, Channel *channel, Client *target, const std::string &comment);
 	void handleKickLogic(Client *client, const std::string &channelName, const std::string &targetNick, const std::string &comment);
+	void broadcastNickChange(Client* client, std::string &msg);
 
 public:
 	Server();

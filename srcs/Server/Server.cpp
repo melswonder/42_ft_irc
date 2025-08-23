@@ -107,6 +107,7 @@ Situation Server::handleClientData(int clientFd)
 	{
 		std::vector<std::string> split_data = split(data[i], ' '); // コマンドを
 		std::string command = split_data[0];
+		std::transform(command.begin(), command.end(), command.begin(), ::toupper);
 
 		if (command == "CAP") // 拡張機能どれ使うかをirssi側からServerに送られる、今回は実装不可
 			continue;
