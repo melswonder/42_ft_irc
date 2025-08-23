@@ -95,7 +95,6 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 		else
 			nickMsg = ":" + oldNick + "!" + client->getUsername() + "@" + client->getHostname() + " NICK :" + newNick;
 	}
-	sendToClient(client->getFd(), nickMsg);
 	broadcastNickChange(client, nickMsg);
 
 	// 認証完了判定（NICK と USER 両方受けているか）
