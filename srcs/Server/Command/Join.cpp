@@ -3,7 +3,7 @@
 bool Server::isValidChannelName(const std::string& name) const
 {
 	// 1. 文字列が空か、または規定の最大長を超えていないかチェック
-	if (name.empty() || name.length() > 200)
+	if (name.empty() || name.length() > 50)
 		return false;
 
 	// 2. 最初の文字が '#' または '&' であるかチェック
