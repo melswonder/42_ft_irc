@@ -1,5 +1,35 @@
 #include "../../../includes/IRC.hpp"
 
+void Server::broadcastNickChange(Client* client, std::string &msg)
+{
+	std::set<Client*> sentClients;
+
+	std::set<std::string> channels = client->getChannels();
+	for (std::set<std::string>::iterator it = channels.begin(); it != channels.end(); ++it)
+	{
+		std::string channelName = *it;
+		Channel* channel = getChannel(channelName);
+		if (channel)
+		{
+			// チャンネルのメンバーリストを取得
+			std::set<Client*> members = channel->getMembers();
+			
+			// 各メンバーをループ
+			for (std::set<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt)
+			{
+				Client* member = *memberIt;
+
+				// このメンバーにまだメッセージを送信していないかチェック
+				if (sentClients.find(member) == sentClients.end())
+				{
+					sendToClient(member->getFd(), msg);
+					sentClients.insert(member);
+				}
+			}
+		}
+	}
+}
+
 bool Server::isValidNickname(const std::string& nick)
 {
 	// ニックネームの長さチェック
@@ -56,6 +86,24 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 	std::string oldNick = client->getNickname();
 	client->setNickname(newNick);
 
+	// ニックネーム変更の通知
+	std::string nickMsg = "";
+	if (oldNick.empty())
+	{
+		if (client->getUsername().empty())
+			nickMsg = ":" + newNick + " NICK :" + newNick;
+		else
+			nickMsg = ":" + client->getFullIdentifier() + " NICK :" + newNick;
+	}
+	else
+	{
+		if (client->getUsername().empty())
+			nickMsg = ":" + oldNick + " NICK :" + newNick;
+		else
+			nickMsg = ":" + oldNick + "!" + client->getUsername() + "@" + client->getHostname() + " NICK :" + newNick;
+	}
+	broadcastNickChange(client, nickMsg);
+
 	// 認証完了判定（NICK と USER 両方受けているか）
 	if (!client->isRegistered()
 	&& client->isAuthenticated()
@@ -67,11 +115,4 @@ void Server::handleNick(Client* client, const std::vector<std::string> &data)
 		// getOrCreateChannel(client->getNickname()); もしかしたらつくかも？　irssi側ではnicknameのチャンネルを探していたため
 
 	}
-
-	// ニックネーム変更の通知
-	// 変更前と変更後の両方のユーザーに通知
-	// :old_nick NICK :new_nick
-	std::string nickMsg = ":" + oldNick + " NICK :" + newNick;
-	sendToClient(client->getFd(), nickMsg);
-	
 }
