@@ -112,7 +112,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				{
 					if (dataIndex >= data.size())
 					{
-						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +k");
+						sendToClient(client->getFd(), getServerPrefix() +ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +k");
 						continue;
 					}
 					std::string key = data[dataIndex++];
@@ -129,13 +129,13 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				{
 					if (dataIndex >= data.size())
 					{
-						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for -k");
+						sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for -k");
 						continue;
 					}
 					std::string providedKey = data[dataIndex++];
 					if (channel->getKey() != providedKey)
 					{
-						sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + target + " :Cannot remove channel key (wrong key)");
+						sendToClient(client->getFd(), getServerPrefix() + ERR_BADCHANNELKEY + client->getNickname() + " " + target + " :Cannot remove channel key (wrong key)");
 						continue;
 					}
 					channel->setKey("");
@@ -154,14 +154,14 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				{
 					if (dataIndex >= data.size())
 					{
-						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +l");
+						sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +l");
 						continue;
 					}
 					std::string limitStr = data[dataIndex++];
 					int limit = atoi(limitStr.c_str());
 					if (limit <= 0)
 					{
-						sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Invalid limit value");
+						sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Invalid limit value");
 						continue;
 					}
 					channel->setUserLimit(limit);
@@ -188,19 +188,19 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 			{
 				if (dataIndex >= data.size())
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters for +o/-o");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters for +o/-o");
 					continue;
 				}
 				std::string userNick = data[dataIndex++];
 				Client* targetClient = getClientByNickname(userNick);
 				if (!targetClient)
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 401 " + client->getNickname() + " " + userNick + " :No such nick/channel");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHNICK + client->getNickname() + " " + userNick + " :No such nick/channel");
 					continue;
 				}
 				if (!channel->isMember(targetClient))
 				{
-					sendToClient(client->getFd(), getServerPrefix() + " 441 " + client->getNickname() + " " + userNick + " " + target + " :They aren't on that channel");
+					sendToClient(client->getFd(), getServerPrefix() + ERR_USERNOTINCHANNEL + client->getNickname() + " " + userNick + " " + target + " :They aren't on that channel");
 					continue;
 				}
 				
@@ -234,7 +234,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				}
 			}
 			else
-				sendToClient(client->getFd(), getServerPrefix() + " 472 " + client->getNickname() + " " + mode + " :is unknown mode char to me");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_UNKNOWNMODE + client->getNickname() + " " + mode + " :is unknown mode char to me");
 		}
 	}
 
