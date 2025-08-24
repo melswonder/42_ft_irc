@@ -5,9 +5,11 @@ void Server::handleUser(Client *client, const std::vector<std::string> &data)
 {
 	size_t size;
 
+	//　登録後にもコマンドが来る可能性がある
 	if (client->isRegistered() == true)
 	{
 		std::cout << "You already registered!" << std::endl;
+		sendToClient(client->getFd(), getServerPrefix() + ERR_ALREADYREGISTRED + client->getNickname() +" :Unauthorized command (already registered)");
 		return;
 	}
 	try
