@@ -124,10 +124,17 @@ Situation Server::handleClientData(int clientFd)
 					handlePass(it->second, split_data);
 				}
 				// NICKとUSERコマンドのハンドリングロジックをここに追加
-				else if (command == "NICK")
-					handleNick(it->second, split_data);
-				else if (command == "USER")
-					handleUser(it->second, split_data);
+				if (it->second->isAuthenticated())
+				{
+					if (command == "NICK")
+						handleNick(it->second, split_data);
+					else if (command == "USER")
+						handleUser(it->second, split_data);
+				}
+				else
+				{
+					sendToClient(clientFd, getServerPrefix() + ERR_NEEDMOREPARAMS +"* PASS :Not enough parameters");
+				}
 			}
 			else
 			{
