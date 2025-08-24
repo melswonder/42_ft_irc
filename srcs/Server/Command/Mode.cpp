@@ -36,80 +36,76 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 	// 成功したモード変更を記録
 	std::string appliedModes = "";
 	std::vector<std::string> appliedParams;
-	bool currentSign = true; // true for +, false for -
-	bool needSignInOutput = true; // 最初は必ず符号が必要
+	bool currentSign = true;
+	bool needSignInOutput = true;
 
 	while (dataIndex < data.size())
 	{
 		std::string token = data[dataIndex];
 		
-		// トークンがモードフラグかどうかをチェック（+または-で始まる）
 		if (token.empty() || (token[0] != '+' && token[0] != '-'))
 		{
-			// モードフラグではない場合、次のトークンへ
 			dataIndex++;
 			continue;
 		}
-		
-		// モードフラグを処理
-		dataIndex++; // 次のトークンへ移動（パラメータがあるかもしれない）
+	
+		dataIndex++;
 		
 		for (size_t i = 0; i < token.length(); ++i)
 		{
 			char mode = token[i];
 		
-		if (mode == '+')
-		{
-			addingMode = true;
-			if (currentSign != true)
+			if (mode == '+')
 			{
-				currentSign = true;
-				needSignInOutput = true;
+				addingMode = true;
+				if (currentSign != true)
+				{
+					currentSign = true;
+					needSignInOutput = true;
+				}
+				continue;
 			}
-			continue;
-		}
-		else if (mode == '-')
-		{
-			addingMode = false;
-			if (currentSign != false)
+			else if (mode == '-')
 			{
-				currentSign = false;
-				needSignInOutput = true;
+				addingMode = false;
+				if (currentSign != false)
+				{
+					currentSign = false;
+					needSignInOutput = true;
+				}
+				continue;
 			}
-			continue;
-		}
 
-		// オペレーター権限の確認が必要なモード
-		if (mode == 'o' || mode == 'i' || mode == 't' || mode == 'k' || mode == 'l')
-		{
-			if (!channel->isOperator(client))
+			if (mode == 'o' || mode == 'i' || mode == 't' || mode == 'k' || mode == 'l')
 			{
-				sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + target + " :You're not channel operator");
-				return;
+				if (!channel->isOperator(client))
+				{
+					sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + target + " :You're not channel operator");
+					return;
+				}
 			}
-		}
 
-		// 各モードの処理
-		if (mode == 'i')
-		{
-			channel->setInviteOnly(addingMode);
-			if (needSignInOutput)
+			// 各モードの処理
+			if (mode == 'i')
 			{
-				appliedModes += (addingMode ? "+" : "-");
-				needSignInOutput = false;
+				channel->setInviteOnly(addingMode);
+				if (needSignInOutput)
+				{
+					appliedModes += (addingMode ? "+" : "-");
+					needSignInOutput = false;
+				}
+				appliedModes += mode;
 			}
-			appliedModes += mode;
-		}
-		else if (mode == 't')
-		{
-			channel->setTopicRestricted(addingMode);
-			if (needSignInOutput)
+			else if (mode == 't')
 			{
-				appliedModes += (addingMode ? "+" : "-");
-				needSignInOutput = false;
+				channel->setTopicRestricted(addingMode);
+				if (needSignInOutput)
+				{
+					appliedModes += (addingMode ? "+" : "-");
+					needSignInOutput = false;
+				}
+				appliedModes += mode;
 			}
-			appliedModes += mode;
-		}
 			else if (mode == 'k')
 			{
 				if (addingMode)
@@ -238,10 +234,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 				}
 			}
 			else
-			{
-				// 未知のモードフラグ
 				sendToClient(client->getFd(), getServerPrefix() + " 472 " + client->getNickname() + " " + mode + " :is unknown mode char to me");
-			}
 		}
 	}
 
