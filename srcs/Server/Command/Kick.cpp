@@ -30,7 +30,7 @@ void Server::handleKickLogic(Client* client, const std::string& channelName, con
 	std::map<std::string, Channel*>::iterator channelIt = _channels.find(channelName);
 	if (channelIt == _channels.end())
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOSUCHCHANNEL + " " + client->getNickname() + " " + channelName + " :No such channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHCHANNEL +  client->getNickname() + " " + channelName + " :No such channel");
 		return;
 	}
 	Channel* channel = channelIt->second;
@@ -38,14 +38,14 @@ void Server::handleKickLogic(Client* client, const std::string& channelName, con
 	// 実行者がチャンネルメンバーかチェック
 	if (!channel->isMember(client))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOTONCHANNEL + " " + client->getNickname() + " " + channelName + " :You're not on that channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTONCHANNEL + client->getNickname() + " " + channelName + " :You're not on that channel");
 		return;
 	}
 
 	// 実行者がチャンネルオペレーターかチェック
 	if (!channel->isOperator(client))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_CHANOPRIVSNEEDED + " " + client->getNickname() + " " + channelName + " :You're not channel operator");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + channelName + " :You're not channel operator");
 		return;
 	}
 
@@ -53,12 +53,12 @@ void Server::handleKickLogic(Client* client, const std::string& channelName, con
 	Client* targetClient = getClientByNickname(targetNick);
 	if (!targetClient)
 	{ 
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NOSUCHNICK + " " + client->getNickname() + " " + targetNick + " :No such nick/channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHNICK + client->getNickname() + " " + targetNick + " :No such nick/channel");
 		return;
 	}
 	if (!channel->isMember(targetClient))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_USERNOTINCHANNEL + " " + client->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_USERNOTINCHANNEL + client->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
 		return;
 	}
 
@@ -70,7 +70,7 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 {
 	if (data.size() < 3)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " KICK :Not enough parameters");
 		return;
 	}
 
@@ -90,7 +90,7 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 				comment = data[3];
 			else
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Invalid comment format or too many parameters");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " KICK :Invalid comment format or too many parameters");
 				return;
 			}
 		}
@@ -101,7 +101,7 @@ void Server::handleKick(Client* client, const std::vector<std::string> &data)
 
 	if (!((channelNames.size() == 1 && targetNicks.size() >= 1) || (channelNames.size() > 1 && channelNames.size() == targetNicks.size())))
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " " + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " KICK :Invalid channel/user combination for KICK command");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " KICK :Invalid channel/user combination for KICK command");
 		return;
 	}
 

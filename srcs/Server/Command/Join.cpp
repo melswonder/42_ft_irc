@@ -3,7 +3,7 @@
 bool Server::isValidChannelName(const std::string& name) const
 {
 	// 1. 文字列が空か、または規定の最大長を超えていないかチェック
-	if (name.empty() || name.length() > 200)
+	if (name.empty() || name.length() > 50)
 		return false;
 
 	// 2. 最初の文字が '#' または '&' であるかチェック
@@ -28,13 +28,13 @@ void Server::handleJoin(Client *client, const std::vector<std::string> &data)
 	// クライアントが認証済みか確認
 	if (!client->isRegistered())
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 451 * :You have not registered");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOTREGISTERED + "* :You have not registered");
 		return;
 	}
 
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 * JOIN :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + "* JOIN :Not enough parameters");
 		return;
 	}
 
@@ -52,7 +52,7 @@ void Server::handleJoin(Client *client, const std::vector<std::string> &data)
 
 		if (!(isValidChannelName(channelName)))
 		{
-			sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + channelName + " :No such channel");
+			sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHCHANNEL + client->getNickname() + " " + channelName + " :No such channel");
 			continue;
 		}
 	
@@ -63,13 +63,13 @@ void Server::handleJoin(Client *client, const std::vector<std::string> &data)
 		{
 			// 上限
 			if (channel->getUserLimit() > 0 && static_cast<int>(channel->getMembers().size()) >= channel->getUserLimit())
-				sendToClient(client->getFd(), getServerPrefix() + " 471 " + client->getNickname() + " " + channelName + " :Cannot join channel (+l)");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_CHANNELISFULL + client->getNickname() + " " + channelName + " :Cannot join channel (+l)");
 			// キー設定あり
 			else if (!channel->getKey().empty() && channel->getKey() != key)
-				sendToClient(client->getFd(), getServerPrefix() + " 475 " + client->getNickname() + " " + channelName + " :Cannot join channel (+k)");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_BADCHANNELKEY + client->getNickname() + " " + channelName + " :Cannot join channel (+k)");
 			// 招待制
 			else if (channel->isInviteOnly() && !channel->isInvited(client))
-				sendToClient(client->getFd(), getServerPrefix() + " 473 " + client->getNickname() + " " + channelName + " :Cannot join channel (+i)");
+				sendToClient(client->getFd(), getServerPrefix() + ERR_INVITEONLYCHAN + client->getNickname() + " " + channelName + " :Cannot join channel (+i)");
 			continue;
 		}
 	
@@ -84,10 +84,10 @@ void Server::handleJoin(Client *client, const std::vector<std::string> &data)
 	
 		// トピックがあれば送信
 		if (!channel->getTopic().empty())
-			sendToClient(client->getFd(), getServerPrefix() + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic());
+			sendToClient(client->getFd(), getServerPrefix() + RPL_LIST + client->getNickname() + " " + channelName + " :" + channel->getTopic());
 	
 		// 名前リストを送信
-		sendToClient(client->getFd(), getServerPrefix() + " 353 " + client->getNickname() + " = " + channelName + " :" + channel->getMembersList());
-		sendToClient(client->getFd(), getServerPrefix() + " 366 " + client->getNickname() + " " + channelName + " :End of /NAMES list");
+		sendToClient(client->getFd(), getServerPrefix() + RPL_NAMREPLY + client->getNickname() + " = " + channelName + " :" + channel->getMembersList());
+		sendToClient(client->getFd(), getServerPrefix() + RPL_ENDOFNAMES + client->getNickname() + " " + channelName + " :End of /NAMES list");
 	}
 }

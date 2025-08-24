@@ -4,7 +4,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 {
 	if (data.size() < 2)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 461 " + client->getNickname() + " MODE :Not enough parameters");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS + client->getNickname() + " MODE :Not enough parameters");
 		return;
 	}
 
@@ -12,7 +12,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 	Channel* channel = getChannel(target);
 	if (!channel)
 	{
-		sendToClient(client->getFd(), getServerPrefix() + " 403 " + client->getNickname() + " " + target + " :No such channel");
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NOSUCHCHANNEL + client->getNickname() + " " + target + " :No such channel");
 		return;
 	}
 
@@ -25,7 +25,7 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 		if (!channel->getKey().empty()) modeString += "k";
 		if (channel->getUserLimit() > 0) modeString += "l";
 		// RPL_CHANNELMODEIS (324) を送信
-		sendToClient(client->getFd(), getServerPrefix() + " 324 " + client->getNickname() + " " + target + " " + modeString);
+		sendToClient(client->getFd(), getServerPrefix() + RPL_CHANNELMODEIS + client->getNickname() + " " + target + " " + modeString);
 		return;
 	}
 
@@ -84,8 +84,8 @@ void Server::handleMode(Client* client, const std::vector<std::string> &data)
 		{
 			if (!channel->isOperator(client))
 			{
-				sendToClient(client->getFd(), getServerPrefix() + " 482 " + client->getNickname() + " " + target + " :You're not channel operator");
-				continue; // エラーでも他のモードは処理を続ける
+				sendToClient(client->getFd(), getServerPrefix() + ERR_CHANOPRIVSNEEDED + client->getNickname() + " " + target + " :You're not channel operator");
+				return;
 			}
 		}
 

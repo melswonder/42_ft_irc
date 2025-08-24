@@ -125,10 +125,17 @@ Situation Server::handleClientData(int clientFd)
 					handlePass(it->second, split_data);
 				}
 				// NICKとUSERコマンドのハンドリングロジックをここに追加
-				else if (command == "NICK")
-					handleNick(it->second, split_data);
-				else if (command == "USER")
-					handleUser(it->second, split_data);
+				if (it->second->isAuthenticated())
+				{
+					if (command == "NICK")
+						handleNick(it->second, split_data);
+					else if (command == "USER")
+						handleUser(it->second, split_data);
+				}
+				else
+				{
+					sendToClient(clientFd, getServerPrefix() + ERR_NEEDMOREPARAMS +"* PASS :Not enough parameters");
+				}
 			}
 			else
 			{
@@ -146,7 +153,7 @@ Situation Server::handleClientData(int clientFd)
 						  << "\"" << std::endl;
 
 				// クライアントにエラーメッセージを送信
-				sendToClient(clientFd, getServerPrefix() + " 451 * :You have not registered");
+				sendToClient(clientFd, getServerPrefix() + ERR_NOTREGISTERED + "* :You have not registered");
 			}
 		}
 		else // 認証済みの場合
@@ -157,14 +164,18 @@ Situation Server::handleClientData(int clientFd)
 				disconnectClient(clientFd);
 				return DISCONNECT;
 			}
+			else if(command == "PASS")
+				handlePass(it->second, split_data);
+			else if(command == "NICK")
+				handleNick(it->second, split_data);
+			else if(command == "USER")
+				handleUser(it->second, split_data);
 			else if (command == "INFO")
 				serverInfo();
 			else if (command == "END")
 				throw std::runtime_error("END!");
 			else if (command == "PING")
 				serverPing(clientFd);
-			else if (command == "NICK")
-				handleNick(it->second, split_data);
 			else if (command == "JOIN")
 				handleJoin(it->second, split_data);
 			else if (command == "PRIVMSG")
@@ -180,7 +191,7 @@ Situation Server::handleClientData(int clientFd)
 			else
 			{
 				std::cout << "Unknown command: " << command << std::endl;
-				sendToClient(clientFd, getServerPrefix() + " 421 * " + command + " :Unknown command");
+				sendToClient(clientFd, getServerPrefix() + ERR_UNKNOWNCOMMAND + "* " + command + " :Unknown command");
 			}
 		}
 	}
@@ -293,14 +304,6 @@ std::ostream &operator<<(std::ostream &out, const Server &server)
 	return out;
 }
 
-void Server::sendNumericReply(int clientFd, const std::string &serverName, const std::string &clientNick, const std::string &code, const std::string &message)
-{
-	std::stringstream ss;
-	ss << ":" << serverName << " " << code << " " << clientNick << " :" << message << "\r\n";
-	std::string response = ss.str();
-	send(clientFd, response.c_str(), response.length(), 0);
-}
-
 void Server::sendWelcomeMessages(Client *client)
 {
 	std::string serverName = _serverName;
@@ -308,21 +311,21 @@ void Server::sendWelcomeMessages(Client *client)
 	std::string userHost = nick + "!" + client->getUsername() + "@" + client->getHostname();
 
 	// 001
-	sendNumericReply(client->getFd(), serverName, nick, "001", "Welcome to the ft_irc network, " + userHost);
+	sendToClient(client->getFd(), ":" + serverName + RPL_WELCOME + nick + " :Welcome to the ft_irc network, " + userHost);
 	// 002
-	sendNumericReply(client->getFd(), serverName, nick, "002", "Your host is " + serverName + ", running version ft_irc-1.0");
+	sendToClient(client->getFd(), ":" + serverName + RPL_YOURHOST + nick + " :Your host is " + serverName + ", running version ft_irc-1.0");
 	// 003
 	time_t now = time(NULL);
 	std::string createdTime = ctime(&now);
 	createdTime.erase(createdTime.find_last_not_of(" \n\r\t") + 1);
-	sendNumericReply(client->getFd(), serverName, nick, "003", "This server was created " + createdTime);
+	sendToClient(client->getFd(), ":" + serverName + RPL_CREATED + nick + " :This server was created " + createdTime);
 	// 004
-	sendNumericReply(client->getFd(), serverName, nick, "004", serverName + " ft_irc-1.0 i t k o l");
-	// 005
-	sendNumericReply(client->getFd(), serverName, nick, "005", "CHANMODES=i,t,k,o,l PREFIX=(o)@ CHANTYPES=# :are supported by this server");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MYINFO + nick + " :" + serverName + " ft_irc-1.0 i t k o l");
+	// 005 RFC1459 には含まれておらず、RFC2812§5.1.1 など後続の仕様で定義された拡張応答
+	sendToClient(client->getFd(), ":" + serverName + RPL_ISUPPORT + nick + " :CHANMODES=i,t,k,o,l PREFIX=(o)@ CHANTYPES=# :are supported by this server");
 	// MOTD
-	sendNumericReply(client->getFd(), serverName, nick, "375", "- " + serverName + " Message of the day -");
-	sendNumericReply(client->getFd(), serverName, nick, "372", "- Welcome to the ft_irc server!");
-	sendNumericReply(client->getFd(), serverName, nick, "372", "- Please follow the rules.");
-	sendNumericReply(client->getFd(), serverName, nick, "376", "End of MOTD command");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTDSTART + nick + " :- " + serverName + " Message of the day -");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Welcome to the ft_irc server!");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Please follow the rules.");
+	sendToClient(client->getFd(), ":" + serverName + RPL_ENDOFMOTD + nick + " :End of MOTD command");
 }

@@ -78,7 +78,6 @@ public:
 	void broadcastToChannel(const std::string &channelName, const std::string &message, Client *sender = NULL);
 	bool isValidChannelName(const std::string &name) const;
 
-	void sendNumericReply(int clientFd, const std::string &serverName, const std::string &clientNick, const std::string &code, const std::string &message);
 	// void setSignal(int signal) {this->_signal = signal;}
 };
 
