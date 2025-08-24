@@ -3,6 +3,13 @@
 //=== PASS ===
 void Server::handlePass(Client* client, const std::vector<std::string> &data)
 {
+	//登録後にもコマンドが来る可能性がある
+	if(client->isRegistered() == true)
+	{
+		sendToClient(client->getFd(), getServerPrefix() + ERR_ALREADYREGISTRED + client->getNickname() +" :Unauthorized command (already registered)");
+		return ;
+	}
+
 	std::string password = data[1];
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));

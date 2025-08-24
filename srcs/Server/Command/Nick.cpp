@@ -19,6 +19,13 @@ bool Server::isValidNickname(const std::string& nick)
 
 void Server::handleNick(Client* client, const std::vector<std::string> &data)
 {
+	//登録後にもコマンドが来る可能性がある
+	if(client->isRegistered() == true)
+	{
+		sendToClient(client->getFd(), getServerPrefix() + ERR_ALREADYREGISTRED + client->getNickname() +" :Unauthorized command (already registered)");
+		return ;
+	}
+
 	// パラメータの不足を確認
 	if (data.size() < 2)
 	{

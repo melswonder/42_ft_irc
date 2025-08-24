@@ -163,14 +163,18 @@ Situation Server::handleClientData(int clientFd)
 				disconnectClient(clientFd);
 				return DISCONNECT;
 			}
+			else if(command == "PASS")
+				handlePass(it->second, split_data);
+			else if(command == "NICK")
+				handleNick(it->second, split_data);
+			else if(command == "USER")
+				handleUser(it->second, split_data);
 			else if (command == "INFO")
 				serverInfo();
 			else if (command == "END")
 				throw std::runtime_error("END!");
 			else if (command == "PING")
 				serverPing(clientFd);
-			else if (command == "NICK")
-				handleNick(it->second, split_data);
 			else if (command == "JOIN")
 				handleJoin(it->second, split_data);
 			else if (command == "PRIVMSG")
@@ -306,21 +310,21 @@ void Server::sendWelcomeMessages(Client *client)
 	std::string userHost = nick + "!" + client->getUsername() + "@" + client->getHostname();
 
 	// 001
-	sendToClient(client->getFd(), ":" + serverName + RPL_WELCOME + nick + " :Welcome to the ft_irc network, " + userHost + "\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_WELCOME + nick + " :Welcome to the ft_irc network, " + userHost);
 	// 002
-	sendToClient(client->getFd(), ":" + serverName + RPL_YOURHOST + nick + " :Your host is " + serverName + ", running version ft_irc-1.0\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_YOURHOST + nick + " :Your host is " + serverName + ", running version ft_irc-1.0");
 	// 003
 	time_t now = time(NULL);
 	std::string createdTime = ctime(&now);
 	createdTime.erase(createdTime.find_last_not_of(" \n\r\t") + 1);
-	sendToClient(client->getFd(), ":" + serverName + RPL_CREATED + nick + " :This server was created " + createdTime + "\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_CREATED + nick + " :This server was created " + createdTime);
 	// 004
-	sendToClient(client->getFd(), ":" + serverName + RPL_MYINFO + nick + " :" + serverName + " ft_irc-1.0 i t k o l\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MYINFO + nick + " :" + serverName + " ft_irc-1.0 i t k o l");
 	// 005 RFC1459 には含まれておらず、RFC2812§5.1.1 など後続の仕様で定義された拡張応答
-	sendToClient(client->getFd(), ":" + serverName + RPL_ISUPPORT + nick + " :CHANMODES=i,t,k,o,l PREFIX=(o)@ CHANTYPES=# :are supported by this server\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_ISUPPORT + nick + " :CHANMODES=i,t,k,o,l PREFIX=(o)@ CHANTYPES=# :are supported by this server");
 	// MOTD
-	sendToClient(client->getFd(), ":" + serverName + RPL_MOTDSTART + nick + " :- " + serverName + " Message of the day -\r\n");
-	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Welcome to the ft_irc server!\r\n");
-	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Please follow the rules.\r\n");
-	sendToClient(client->getFd(), ":" + serverName + RPL_ENDOFMOTD + nick + " :End of MOTD command\r\n");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTDSTART + nick + " :- " + serverName + " Message of the day -");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Welcome to the ft_irc server!");
+	sendToClient(client->getFd(), ":" + serverName + RPL_MOTD + nick + " :- Please follow the rules.");
+	sendToClient(client->getFd(), ":" + serverName + RPL_ENDOFMOTD + nick + " :End of MOTD command");
 }
