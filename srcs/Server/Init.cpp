@@ -49,10 +49,6 @@ void Server::serverInit(char *argv[])
 	// アドレス構造体を設定する
 	setServerAddr(_port);
 
-	// バインド　作成した特定のソケットにローカルアドレスを割り当てるために使われる。
-	// ソケットは作成した時点では単なる「通信窓口」であり、どのネットワークアドレスと関連付けられているかが決まっていない。
-	// bindを使うことで、そのソケットを192.168.1.100の8080番ポートといった、具体的な
-	// 　「住所」と部屋番号に紐付ける。
 	if (bind(_listeningSocketFd, (struct sockaddr *)&_server_addr, sizeof(_server_addr)) == -1)
 	{
 		std::cerr << "Error: Failed to bind to port " << _port << " - " << strerror(errno) << std::endl;
@@ -60,10 +56,6 @@ void Server::serverInit(char *argv[])
 		throw std::runtime_error("Bind failed");
 	}
 
-	// リッスン bubdが完了したソケットは、まだ「接続を受け入れる準備」が出来ていません
-	// 　listenを使うことでｍソケットは「待ち受けキュー」を作成し、クライアントからの接続要求を
-	// 一時的にとどめておくことができる・
-	// 　これによりサーバーは複数のクライアントからの接続要求を順番に処理できるようになる。
 	if (listen(_listeningSocketFd, 10) == -1)
 	{
 		std::cerr << "Error: Failed to listen - " << strerror(errno) << std::endl;

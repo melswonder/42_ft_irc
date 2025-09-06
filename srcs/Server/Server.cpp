@@ -1,6 +1,6 @@
 #include "../../includes/IRC.hpp"
 
-Server::Server() {}
+Server::Server() :_signal(false){}
 Server::~Server()
 {
 	// チャンネルマップの解放
@@ -26,7 +26,7 @@ void Server::serverRun()
 {
 	std::cout << "Server is running and listening on port " << _port << std::endl;
 	int numEvents = 0;
-	while (true)
+	while (this->_signal == false)
 	{
 		numEvents = poll(&_pollFds[0], _pollFds.size(), -1);
 
@@ -90,22 +90,12 @@ Situation Server::handleClientData(int clientFd)
 		return CONNECT; // 空のメッセージは無視
 	}
 
-	// std::cout << GRE << message << WHI << std::endl;
 	std::map<int, Client *>::iterator it = _clients.find(clientFd);
-
-	// if (it == _clients.end())
-	// {
-	// 	Client newClient(clientFd);
-	// 	_clients[clientFd] = newClient;
-	// 	it = _clients.find(clientFd);
-	// 	std::cout << "Created new Client for fd: " << clientFd << std::endl;
-	// }
-
-	std::vector<std::string> data = split(message, '\n'); // コマンドを
+	std::vector<std::string> data = split(message, '\n');
 
 	for (size_t i = 0; i < data.size(); i++)
 	{
-		std::vector<std::string> split_data = split(data[i], ' '); // コマンドを
+		std::vector<std::string> split_data = split(data[i], ' ');
 		std::string command = split_data[0];
 		std::transform(command.begin(), command.end(), command.begin(), ::toupper);
 
@@ -229,8 +219,6 @@ void Server::setClientAuthentications(int newfd)
 	std::cout << "Created new client for fd: " << newfd << std::endl;
 }
 
-// この関数はヘルパー関数です　後にbind()という関数で、
-// ソケット通信に必要な情報を整理し、関数に渡すための手段を踏んでいます
 void Server::setServerAddr(int port_number)
 {
 	memset(&_server_addr, 0, sizeof(_server_addr));
@@ -321,7 +309,7 @@ void Server::sendWelcomeMessages(Client *client)
 	sendToClient(client->getFd(), ":" + serverName + RPL_CREATED + nick + " :This server was created " + createdTime);
 	// 004
 	sendToClient(client->getFd(), ":" + serverName + RPL_MYINFO + nick + " :" + serverName + " ft_irc-1.0 i t k o l");
-	// 005 RFC1459 には含まれておらず、RFC2812§5.1.1 など後続の仕様で定義された拡張応答
+	// 005
 	sendToClient(client->getFd(), ":" + serverName + RPL_ISUPPORT + nick + " :CHANMODES=i,t,k,o,l PREFIX=(o)@ CHANTYPES=# :are supported by this server");
 	// MOTD
 	sendToClient(client->getFd(), ":" + serverName + RPL_MOTDSTART + nick + " :- " + serverName + " Message of the day -");

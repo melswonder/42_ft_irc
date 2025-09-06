@@ -1,11 +1,10 @@
 #include "../includes/IRC.hpp"
 
-// void SignalHandler(int signum)
-// {
-//     Server server;
-//     server.setSignal(true);
-//     (void)signum;
-// }
+void SignalHandler(int signum)
+{
+    (void)signum;
+	throw std::runtime_error("Quit");
+}
 
 int isValidArgument(int argc, char *argv[])
 {
@@ -28,15 +27,14 @@ int main(int argc, char *argv[])
 	}
 	try
 	{
-		// signal(SIGINT, SignalHandler); //ctl+c
-		// signal(SIGQUIT, SignalHandler);//ctl+バックスラッシュ
+		signal(SIGINT, SignalHandler);
+		signal(SIGQUIT, SignalHandler);
 		server.serverInit(argv);
-		// std::cout << server << std::endl;
 		server.serverRun();
 	}
 	catch (const std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
 	}
-	// std::cout << "The Server Closed!" << std::endl;
+	// std::cout << "The Server Closed" << std::endl;
 }

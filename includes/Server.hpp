@@ -21,6 +21,7 @@ private:
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client *> _clients;
 	std::map<std::string, Channel *> _channels;
+	bool _signal;
 
 	void handleNewConnection();
 	Situation handleClientData(int clientFd);
@@ -78,7 +79,7 @@ public:
 	void broadcastToChannel(const std::string &channelName, const std::string &message, Client *sender = NULL);
 	bool isValidChannelName(const std::string &name) const;
 
-	// void setSignal(int signal) {this->_signal = signal;}
+	void setSignal(int signal) {this->_signal = signal;}
 };
 
 std::ostream &operator<<(std::ostream &out, const Server &server);
