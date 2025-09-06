@@ -125,7 +125,7 @@ Situation Server::handleClientData(int clientFd)
 					handlePass(it->second, split_data);
 				}
 				// NICKとUSERコマンドのハンドリングロジックをここに追加
-				if (it->second->isAuthenticated())
+				else if (it->second->isAuthenticated())
 				{
 					if (command == "NICK")
 						handleNick(it->second, split_data);
