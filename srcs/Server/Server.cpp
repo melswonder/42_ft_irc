@@ -32,8 +32,6 @@ void Server::serverRun()
 
 		if (numEvents < 0)
 		{
-			if (errno == EINTR)
-				continue;
 			std::cerr << "poll() error" << std::endl;
 			break;
 		}
