@@ -10,6 +10,12 @@ void Server::handlePass(Client* client, const std::vector<std::string> &data)
 		return ;
 	}
 
+	if(data.size() != 2)
+	{
+		// エラーメッセージをクライアントに送信
+		sendToClient(client->getFd(), getServerPrefix() + ERR_NEEDMOREPARAMS +"* PASS :Not enough parameters");
+		return;
+	}
 	std::string password = data[1];
 	password.erase(password.find_last_not_of(" \r\n\t") + 1);
 	password.erase(0, password.find_first_not_of(" \r\n\t"));
