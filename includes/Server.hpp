@@ -78,8 +78,6 @@ public:
 	void sendToClient(int clientFd, const std::string &message);
 	void broadcastToChannel(const std::string &channelName, const std::string &message, Client *sender = NULL);
 	bool isValidChannelName(const std::string &name) const;
-
-	void setSignal(int signal) {this->_signal = signal;}
 };
 
 std::ostream &operator<<(std::ostream &out, const Server &server);

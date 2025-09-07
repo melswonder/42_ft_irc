@@ -2,7 +2,7 @@
 
 void SignalHandler(int signum)
 {
-    (void)signum;
+	(void)signum;
 	throw std::runtime_error("Quit");
 }
 

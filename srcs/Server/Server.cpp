@@ -212,6 +212,7 @@ void Server::setClientAuthentications(int newfd)
 {
 	Client *newClient = new Client(newfd);
 	_clients.insert(std::make_pair(newfd, newClient));
+	delete newClient;
 	std::map<int, Client *>::iterator it = _clients.find(newfd);
 	it->second->setAuthenticated(false);
 	std::cout << "Created new client for fd: " << newfd << std::endl;
