@@ -9,15 +9,21 @@ void Server::serverInfo()
 // === EXIT === 
 void Server::disconnectClient(int clientFd)
 {
-	for (size_t i = 0; i < _pollFds.size(); ++i)
-	{
-		if (_pollFds[i].fd == clientFd)
-		{
-			_pollFds.erase(_pollFds.begin() + i);
-			break;
-		}
-	}
-	close(clientFd);
+    for (size_t i = 0; i < _pollFds.size(); ++i)
+    {
+        if (_pollFds[i].fd == clientFd)
+        {
+            _pollFds.erase(_pollFds.begin() + i);
+            std::map<int, Client *>::iterator it_client = _clients.find(clientFd);
+            if (it_client != _clients.end())
+            {
+                delete it_client->second;
+                _clients.erase(it_client);
+            }
+            break;
+        }
+    }
+    close(clientFd);
 }
 
 // === PING ===
