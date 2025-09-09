@@ -17,8 +17,10 @@ Server::~Server()
 	while (it_client != _clients.end())
 	{
 		delete it_client->second;
+		close(it_client->first);
 		it_client++;
 	}
+	close(_listeningSocketFd);
 	_clients.clear();
 }
 
