@@ -74,117 +74,131 @@ Situation Server::handleClientData(int clientFd)
 	char buffer[512];
 	int bytesRead;
 
-	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+	bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (bytesRead <= 0)
 	{
 		disconnectClient(clientFd);
+		_clientBuffers.erase(clientFd);
 		return DISCONNECT;
 	}
-	buffer[bytesRead] = '\0';	 // readしたもんの末尾に\0をつけるようなもん。
-	std::string message(buffer); // 渡された文字にコマンドがあるかチェックするため別のに入れる。
+	
+	_clientBuffers[clientFd].append(buffer, bytesRead);
 
-	message.erase(message.find_last_not_of(" \r\n\t") + 1); // 末尾の\r\nを消さないとifできない
-	message.erase(0, message.find_first_not_of(" \r\n\t"));
-	if (message.empty())
+	while(true)
 	{
-		return CONNECT; // 空のメッセージは無視
-	}
+		size_t newlinePos = _clientBuffers[clientFd].find('\n');
+		if (newlinePos == std::string::npos)
+        {
+            return CONNECT;
+        }
+		std::string message = _clientBuffers[clientFd].substr(0, newlinePos);
+		_clientBuffers[clientFd].erase(0, newlinePos + 1); // 処理済みのメッセージをバッファから削除
 
-	std::map<int, Client *>::iterator it = _clients.find(clientFd);
-	std::vector<std::string> data = split(message, '\n');
-
-	for (size_t i = 0; i < data.size(); i++)
-	{
-		std::vector<std::string> split_data = split(data[i], ' ');
-		std::string command = split_data[0];
-		std::transform(command.begin(), command.end(), command.begin(), ::toupper);
-
-		if (command == "CAP") // 拡張機能どれ使うかをirssi側からServerに送られる、今回は実装不可
-			continue;
-		// 認証状態のチェック
-		if (it->second->isRegistered() == false)
+		message.erase(0, message.find_first_not_of(" \r\n\t"));
+        message.erase(message.find_last_not_of(" \r\n\t") + 1);
+		
+		if (message.empty())
 		{
-			// 未認証の場合、許可されたコマンドのみを処理
-			if (command == "PASS" || command == "NICK" || command == "USER")
+			continue; // 空のメッセージは無視
+		}
+
+		std::map<int, Client *>::iterator it = _clients.find(clientFd);
+		std::vector<std::string> data = split(message, '\n');
+
+		for (size_t i = 0; i < data.size(); i++)
+		{
+			std::vector<std::string> split_data = split(data[i], ' ');
+			std::string command = split_data[0];
+			std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+
+			if (command == "CAP") // 拡張機能どれ使うかをirssi側からServerに送られる、今回は実装不可
+				continue;
+			// 認証状態のチェック
+			if (it->second->isRegistered() == false)
 			{
-				// ここで認証関連の関数を呼び出す
-				if (command == "PASS")
+				// 未認証の場合、許可されたコマンドのみを処理
+				if (command == "PASS" || command == "NICK" || command == "USER")
 				{
-					if (it->second->isAuthenticated())
-						return CONNECT;
-					handlePass(it->second, split_data);
-				}
-				// NICKとUSERコマンドのハンドリングロジックをここに追加
-				else if (it->second->isAuthenticated())
-				{
-					if (command == "NICK")
-						handleNick(it->second, split_data);
-					else if (command == "USER")
-						handleUser(it->second, split_data);
+					// ここで認証関連の関数を呼び出す
+					if (command == "PASS")
+					{
+						if (it->second->isAuthenticated())
+							return CONNECT;
+						handlePass(it->second, split_data);
+					}
+					// NICKとUSERコマンドのハンドリングロジックをここに追加
+					else if (it->second->isAuthenticated())
+					{
+						if (command == "NICK")
+							handleNick(it->second, split_data);
+						else if (command == "USER")
+							handleUser(it->second, split_data);
+					}
+					else
+					{
+						sendToClient(clientFd, getServerPrefix() + ERR_NEEDMOREPARAMS +"* PASS :Not enough parameters");
+					}
 				}
 				else
 				{
-					sendToClient(clientFd, getServerPrefix() + ERR_NEEDMOREPARAMS +"* PASS :Not enough parameters");
+					// 許可されていないコマンドの場合、ログに出力し、エラーメッセージを送信
+					std::stringstream ss;
+					ss << it->second->getPort();
+					std::string port_str = ss.str();
+
+					std::cout << "Unauthorized command from unregistered client "
+							<< it->second->getHostname()
+							<< ":"
+							<< port_str
+							<< " \""
+							<< command
+							<< "\"" << std::endl;
+
+					// クライアントにエラーメッセージを送信
+					sendToClient(clientFd, getServerPrefix() + ERR_NOTREGISTERED + "* :You have not registered");
 				}
 			}
-			else
+			else // 認証済みの場合
 			{
-				// 許可されていないコマンドの場合、ログに出力し、エラーメッセージを送信
-				std::stringstream ss;
-				ss << it->second->getPort();
-				std::string port_str = ss.str();
-
-				std::cout << "Unauthorized command from unregistered client "
-						  << it->second->getHostname()
-						  << ":"
-						  << port_str
-						  << " \""
-						  << command
-						  << "\"" << std::endl;
-
-				// クライアントにエラーメッセージを送信
-				sendToClient(clientFd, getServerPrefix() + ERR_NOTREGISTERED + "* :You have not registered");
-			}
-		}
-		else // 認証済みの場合
-		{
-			// 認証後のコマンドを処理
-			if (command == "EXIT")
-			{
-				disconnectClient(clientFd);
-				return DISCONNECT;
-			}
-			else if(command == "PASS")
-				handlePass(it->second, split_data);
-			else if(command == "NICK")
-				handleNick(it->second, split_data);
-			else if(command == "USER")
-				handleUser(it->second, split_data);
-			else if (command == "INFO")
-				serverInfo();
-			else if (command == "END")
-				throw std::runtime_error("END!");
-			else if (command == "PING")
-				serverPing(clientFd);
-			else if (command == "JOIN")
-				handleJoin(it->second, split_data);
-			else if (command == "PRIVMSG")
-				handlePrivmsg(it->second, split_data);
-			else if (command == "KICK")
-				handleKick(it->second, split_data);
-			else if (command == "MODE")
-				handleMode(it->second, split_data);
-			else if (command == "INVITE")
-				handleInvite(it->second, split_data);
-			else if (command == "TOPIC")
-				handleTopic(it->second, split_data);
-			else
-			{
-				std::cout << "Unknown command: " << command << std::endl;
-				sendToClient(clientFd, getServerPrefix() + ERR_UNKNOWNCOMMAND + "* " + command + " :Unknown command");
+				// 認証後のコマンドを処理
+				if (command == "EXIT")
+				{
+					disconnectClient(clientFd);
+					return DISCONNECT;
+				}
+				else if(command == "PASS")
+					handlePass(it->second, split_data);
+				else if(command == "NICK")
+					handleNick(it->second, split_data);
+				else if(command == "USER")
+					handleUser(it->second, split_data);
+				else if (command == "INFO")
+					serverInfo();
+				else if (command == "END")
+					throw std::runtime_error("END!");
+				else if (command == "PING")
+					serverPing(clientFd);
+				else if (command == "JOIN")
+					handleJoin(it->second, split_data);
+				else if (command == "PRIVMSG")
+					handlePrivmsg(it->second, split_data);
+				else if (command == "KICK")
+					handleKick(it->second, split_data);
+				else if (command == "MODE")
+					handleMode(it->second, split_data);
+				else if (command == "INVITE")
+					handleInvite(it->second, split_data);
+				else if (command == "TOPIC")
+					handleTopic(it->second, split_data);
+				else
+				{
+					std::cout << "Unknown command: " << command << std::endl;
+					sendToClient(clientFd, getServerPrefix() + ERR_UNKNOWNCOMMAND + "* " + command + " :Unknown command");
+				}
 			}
 		}
 	}
+
 	return CONNECT;
 }
 

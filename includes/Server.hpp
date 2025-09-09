@@ -21,6 +21,7 @@ private:
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client *> _clients;
 	std::map<std::string, Channel *> _channels;
+	std::map<int, std::string> _clientBuffers;
 	bool _signal;
 
 	void handleNewConnection();
