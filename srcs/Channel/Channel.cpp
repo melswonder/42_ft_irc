@@ -73,7 +73,9 @@ void Channel::removeMember(Client* client) {
 	_members.erase(client);
 	_operators.erase(client);
 	_inviteList.erase(client);
-	client->leaveChannel(_name);
+	if(client) {
+		client->leaveChannel(_name);
+	}
 }
 
 bool Channel::isMember(Client* client) const {

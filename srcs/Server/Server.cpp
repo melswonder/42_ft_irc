@@ -1,6 +1,6 @@
 #include "../../includes/IRC.hpp"
 
-Server::Server() :_signal(false){}
+Server::Server() : _listeningSocketFd(0), _signal(false){}
 Server::~Server()
 {
 	// チャンネルマップの解放
@@ -20,7 +20,8 @@ Server::~Server()
 		close(it_client->first);
 		it_client++;
 	}
-	close(_listeningSocketFd);
+	if(_listeningSocketFd)
+		close(_listeningSocketFd);
 	_clients.clear();
 }
 
@@ -74,13 +75,15 @@ Situation Server::handleClientData(int clientFd)
 	char buffer[512];
 	int bytesRead;
 
-	bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRead <= 0)
 	{
 		disconnectClient(clientFd);
 		_clientBuffers.erase(clientFd);
 		return DISCONNECT;
 	}
+	
+	buffer[bytesRead] = '\0';
 	
 	_clientBuffers[clientFd].append(buffer, bytesRead);
 
